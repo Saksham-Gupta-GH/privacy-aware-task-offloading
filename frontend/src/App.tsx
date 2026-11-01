@@ -57,7 +57,11 @@ function App() {
   const [tab, setTab] = useState<"browser" | "workspace" | "experiments">("browser");
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
-  const [workers, setWorkers] = useState<Record<string, Worker>>({});
+  const [workers, setWorkers] = useState<Record<string, Worker>>({
+    local: { tier: "local", available: true, ready: true, queue_depth: 0, detail: "Browser ready" },
+    edge: { tier: "edge", available: false, ready: false, queue_depth: 0, detail: "Secure control plane unavailable" },
+    cloud: { tier: "cloud", available: false, ready: false, queue_depth: 0, detail: "Secure control plane unavailable" },
+  });
   const [latencyWeight, setLatencyWeight] = useState(65);
   const [scenario, setScenario] = useState("live");
   const [workload, setWorkload] = useState("actual");
@@ -88,7 +92,9 @@ function App() {
     if (!selectedId && docs.length) setSelectedId(docs[0].id);
   };
 
-  useEffect(() => { refresh().catch((value) => setError(value.message)); }, []);
+  // A Vercel deployment can operate fully in browser-private mode without the
+  // optional Python control plane. Local development still discovers all workers.
+  useEffect(() => { refresh().catch(() => undefined); }, []);
 
   const upload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
