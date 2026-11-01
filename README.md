@@ -22,28 +22,37 @@ objectives only after disallowed destinations have been removed.
 
 ## Browser-private frontend
 
-The deployed-frontend migration has started without removing the tested distributed
-prototype. The default **Private workspace** now:
+The default **Private workspace** now:
 
 - reads `.txt` and text-based `.pdf` files entirely in the browser;
 - classifies content before any remote request;
 - stores documents in browser IndexedDB rather than the application server;
-- previews extracted text and creates lightweight extractive summaries locally; and
+- previews extracted text and creates lightweight extractive summaries;
+- runs a privacy-first latency/energy/availability optimizer in the browser;
+- executes restricted work locally and can dispatch permitted work to the trusted
+  edge or Azure worker;
+- reclassifies remotely dispatched text at the control plane so a modified browser
+  cannot bypass the privacy policy;
+- shows predicted costs, blocked tiers, the placement reason, and a real execution
+  receipt; and
 - rejects scanned PDFs honestly until OCR is explicitly added.
 
-The **Distributed demo** tab retains the measured local/edge/Azure embedding workflow
-while its secure browser-to-worker control path is developed. The browser classifier and
-summarizer have automated TypeScript tests.
+The **Distributed demo** tab retains the measured local/edge/Azure embedding and smart
+search workflow. Browser classification, scheduling, and summarization have automated
+TypeScript tests; the shared worker summarizer has Python tests.
 
 ## Architecture
 
 ```text
-React dashboard
+React private workspace (PDF/TXT reading, classification, IndexedDB, scheduler)
+      |---------------- browser-local summarizer
       |
-Local orchestrator (classification, policy, optimizer, SQLite, search index)
-      |---------------- local ONNX worker
+Local control plane (policy recheck and worker availability)
       |--- SSH tunnel -- trusted Windows edge worker
       `--- SSH tunnel -- Azure cloud worker
+
+Distributed research tab
+      `--- local orchestrator + SQLite + local ONNX smart-search index
 ```
 
 The workload is semantic text embedding with the pinned
@@ -114,12 +123,14 @@ are in [`validation/`](validation/). All included documents are fictional.
 
 ## Suggested live demo
 
-1. Show a public document and explain that all three tiers are permitted.
-2. Switch to **Client + edge busy** and process a medium workload in Azure.
-3. Open a payment-card document: cloud and edge are visibly blocked, regardless of
-   the slider or simulated load.
-4. Process a personal document on the trusted edge.
-5. Show execution receipts, local smart search, and the baseline experiment chart.
+1. In **Private workspace**, click **Load fictional demo**.
+2. Open the public event and choose **Client + edge busy**. Click
+   **Evaluate & summarize**: Azure is selected and returns a real cloud receipt.
+3. Open the fictional payment-card document with the same settings. Cloud and edge
+   are visibly blocked and the receipt says `browser-local-client` / `No network used`.
+4. When the trusted edge laptop is connected, process the personal résumé there.
+5. Use **Distributed demo** to show local smart search, then show the baseline chart
+   in **Experiments**.
 
 The privacy decision never changes to meet a deadline. If no permitted tier can
 meet it, the scheduler reports no feasible placement.

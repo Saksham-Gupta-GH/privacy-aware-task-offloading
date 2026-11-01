@@ -17,12 +17,22 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from .embedding_onnx import MODEL_ID, MODEL_REVISION, OnnxEmbedder
+from .summarizer import summarize_extractively
 
 
 class EmbedRequest(BaseModel):
     task_id: str = Field(min_length=1, max_length=100)
     document_id: str = Field(min_length=1, max_length=100)
     passages: list[str] = Field(min_length=1, max_length=512)
+    privacy_label: str
+    policy_version: str
+
+
+class SummarizeRequest(BaseModel):
+    task_id: str = Field(min_length=1, max_length=100)
+    document_id: str = Field(min_length=1, max_length=100)
+    content: str = Field(min_length=1, max_length=1_000_000)
+    sentence_count: int = Field(default=3, ge=1, le=10)
     privacy_label: str
     policy_version: str
 
@@ -100,6 +110,37 @@ async def embed(request: EmbedRequest) -> dict[str, Any]:
                 "output_digest": digest,
                 "model_revision": MODEL_REVISION,
                 "vectors": vectors.tolist(),
+            }
+    finally:
+        runtime.state = "ready"
+        if runtime.queue_depth < 0:
+            runtime.queue_depth = 0
+
+
+@app.post("/summarize")
+async def summarize(request: SummarizeRequest) -> dict[str, Any]:
+    runtime.queue_depth += 1
+    try:
+        async with runtime.semaphore:
+            runtime.queue_depth -= 1
+            runtime.state = "busy"
+            started = time.perf_counter()
+            summary = await asyncio.to_thread(
+                summarize_extractively, request.content, request.sentence_count
+            )
+            processing_ms = (time.perf_counter() - started) * 1000.0
+            return {
+                "receipt_id": str(uuid.uuid4()),
+                "task_id": request.task_id,
+                "document_id": request.document_id,
+                "worker_id": runtime.worker_id,
+                "tier": runtime.tier,
+                "operation": "extractive_summary",
+                "processing_ms": round(processing_ms, 3),
+                "input_characters": len(request.content),
+                "sentence_count": request.sentence_count,
+                "policy_version": request.policy_version,
+                "summary": summary,
             }
     finally:
         runtime.state = "ready"

@@ -9,7 +9,7 @@ import time
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 import httpx
 import numpy as np
@@ -48,6 +48,15 @@ class ProcessOptions(BaseModel):
 class SearchRequest(BaseModel):
     query: str = Field(min_length=1, max_length=500)
     limit: int = Field(default=5, ge=1, le=20)
+
+
+class BrowserSummaryRequest(BaseModel):
+    document_id: str = Field(min_length=1, max_length=100)
+    document_name: str = Field(min_length=1, max_length=160)
+    content: str = Field(min_length=1, max_length=1_000_000)
+    selected_tier: Literal["edge", "cloud"]
+    reported_sensitivity: str
+    sentence_count: int = Field(default=3, ge=1, le=10)
 
 
 classifier = PrivacyClassifier()
@@ -142,9 +151,18 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="PrivacyDrive", version="1.0.0", lifespan=lifespan)
+configured_origins = [
+    value.strip()
+    for value in os.environ.get("PRIVACYDRIVE_CORS_ORIGINS", "").split(",")
+    if value.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        *configured_origins,
+    ],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -300,6 +318,59 @@ async def search(request: SearchRequest) -> dict[str, Any]:
         "query_processed_at": "local",
         "index_location": "local",
         "results": results[: request.limit],
+    }
+
+
+@app.post("/api/browser/summarize")
+async def browser_summarize(request: BrowserSummaryRequest) -> dict[str, Any]:
+    """Recheck browser classification, then execute only on a permitted remote tier."""
+    verified = classifier.classify(request.content)
+    if verified.sensitivity != request.reported_sensitivity:
+        raise HTTPException(
+            status_code=409,
+            detail="Browser and control-plane privacy labels differ; task kept local.",
+        )
+    if request.selected_tier not in verified.allowed_destinations:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Privacy policy blocks {request.selected_tier} for {verified.sensitivity} data.",
+        )
+    states = await worker_states()
+    selected_state = states[request.selected_tier]
+    if not selected_state.available or not selected_state.ready:
+        raise HTTPException(status_code=503, detail=f"{request.selected_tier.title()} worker is unavailable")
+
+    task_id = str(uuid.uuid4())
+    target = EDGE_URL if request.selected_tier == "edge" else CLOUD_URL
+    started = time.perf_counter()
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                f"{target}/summarize",
+                json={
+                    "task_id": task_id,
+                    "document_id": request.document_id,
+                    "content": request.content,
+                    "sentence_count": request.sentence_count,
+                    "privacy_label": verified.sensitivity,
+                    "policy_version": verified.policy_version,
+                },
+            )
+            response.raise_for_status()
+            receipt = response.json()
+    except Exception as error:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Selected {request.selected_tier} worker failed during summarization",
+        ) from error
+    summary = receipt.pop("summary")
+    return {
+        "summary": summary,
+        "selected_tier": request.selected_tier,
+        "verified_sensitivity": verified.sensitivity,
+        "policy_version": verified.policy_version,
+        "actual_latency_ms": round((time.perf_counter() - started) * 1000.0, 3),
+        "receipt": receipt,
     }
 
 

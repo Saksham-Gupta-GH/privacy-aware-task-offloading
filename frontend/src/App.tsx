@@ -174,7 +174,7 @@ function App() {
 
         {error && <div className="error-banner">{error}<button onClick={() => setError("")}>×</button></div>}
 
-        {tab === "browser" ? <BrowserWorkspace /> : tab === "workspace" ? <>
+        {tab === "browser" ? <BrowserWorkspace workers={workers} /> : tab === "workspace" ? <>
           <section className="toolbar">
             <div className="search-box"><span>⌕</span><input value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && search()} placeholder="Search your processed documents by meaning…" /><button onClick={search}>Search locally</button></div>
             <label className="upload-button">＋ Add text file<input type="file" accept=".txt,text/plain" onChange={upload} /></label>

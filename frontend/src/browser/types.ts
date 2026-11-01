@@ -17,4 +17,6 @@ export type BrowserDocument = {
   classification: BrowserClassification;
   createdAt: number;
   summary?: string;
+  summaryTier?: "local" | "edge" | "cloud";
+  receipt?: Record<string, unknown>;
 };
