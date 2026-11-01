@@ -1,6 +1,8 @@
 import unittest
 
-from privacydrive.summarizer import split_sentences, summarize_extractively
+import numpy as np
+
+from privacydrive.summarizer import split_sentences, summarize_extractively, summarize_semantically
 
 
 class ExtractiveSummarizerTests(unittest.TestCase):
@@ -19,6 +21,17 @@ class ExtractiveSummarizerTests(unittest.TestCase):
         self.assertEqual(len(sentences), 2)
         for sentence in sentences:
             self.assertIn(sentence, source)
+
+    def test_semantic_summary_avoids_near_duplicate_sentences(self):
+        source = (
+            "Cloud systems reduce latency. Edge systems reduce latency. "
+            "Privacy rules keep sensitive data local. Registration closes Friday."
+        )
+        vectors = np.asarray([[1, 0], [0.99, 0.01], [0, 1], [-1, 0]], dtype=np.float32)
+        summary = summarize_semantically(source, vectors, 2)
+        self.assertIn("Cloud systems reduce latency.", summary)
+        self.assertIn("Privacy rules keep sensitive data local.", summary)
+        self.assertNotIn("Edge systems reduce latency.", summary)
 
 
 if __name__ == "__main__":

@@ -6,13 +6,22 @@ const words = (value: string) =>
   value.toLowerCase().match(/[a-z0-9][a-z0-9'-]*/g)?.filter((word) => !STOP_WORDS.has(word)) ?? [];
 
 export function splitSentences(content: string): string[] {
-  const normalized = content.replace(/\s+/g, " ").trim();
-  if (!normalized) return [];
+  const cleaned = content.replace(/\r/g, "").trim();
+  if (!cleaned) return [];
+  const normalized = cleaned.replace(/\s+/g, " ");
   if (typeof Intl.Segmenter !== "undefined") {
     const segmenter = new Intl.Segmenter("en", { granularity: "sentence" });
-    return Array.from(segmenter.segment(normalized), (entry) => entry.segment.trim()).filter(Boolean);
+    const segmented = Array.from(segmenter.segment(normalized), (entry) => entry.segment.trim()).filter(Boolean);
+    if (segmented.length > 1) return segmented;
   }
-  return normalized.split(/(?<=[.!?])\s+/).map((sentence) => sentence.trim()).filter(Boolean);
+  const punctuationSplit = normalized.split(/(?<=[.!?])\s+/).map((sentence) => sentence.trim()).filter(Boolean);
+  if (punctuationSplit.length > 1) return punctuationSplit;
+  const lines = cleaned.split(/\n+/).map((line) => line.trim()).filter((line) => line.length > 20);
+  if (lines.length > 1) return lines;
+  const tokens = normalized.split(/\s+/);
+  return Array.from({ length: Math.ceil(tokens.length / 35) }, (_, index) =>
+    tokens.slice(index * 35, (index + 1) * 35).join(" "),
+  ).filter(Boolean);
 }
 
 export function summarizeExtractively(content: string, requestedSentences = 3): string {

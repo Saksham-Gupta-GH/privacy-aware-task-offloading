@@ -12,12 +12,25 @@ export async function extractPdfText(file: File): Promise<string> {
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
     const page = await pdf.getPage(pageNumber);
     const content = await page.getTextContent();
-    pages.push(
-      content.items
-        .map((item) => ("str" in item ? item.str : ""))
-        .filter(Boolean)
-        .join(" "),
-    );
+    const lines: string[] = [];
+    let line = "";
+    let previousY: number | undefined;
+    for (const item of content.items) {
+      if (!("str" in item) || !item.str.trim()) continue;
+      const y = item.transform[5];
+      if (line && previousY !== undefined && Math.abs(y - previousY) > 4) {
+        lines.push(line.trim());
+        line = "";
+      }
+      line += `${line ? " " : ""}${item.str.trim()}`;
+      if (item.hasEOL) {
+        lines.push(line.trim());
+        line = "";
+      }
+      previousY = y;
+    }
+    if (line.trim()) lines.push(line.trim());
+    pages.push(lines.join("\n"));
   }
   return pages.join("\n\n").trim();
 }

@@ -19,4 +19,14 @@ export type BrowserDocument = {
   summary?: string;
   summaryTier?: "local" | "edge" | "cloud";
   receipt?: Record<string, unknown>;
+  searchPassages?: Array<{ text: string; embedding: number[] }>;
+  embeddingModel?: "all-MiniLM-L6-v2";
+};
+
+export type BrowserSearchResult = {
+  documentId: string;
+  name: string;
+  sensitivity: Sensitivity;
+  score: number;
+  matchingPassage: string;
 };

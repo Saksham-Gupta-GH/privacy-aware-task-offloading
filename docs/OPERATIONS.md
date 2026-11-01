@@ -7,12 +7,12 @@
 | Dashboard + orchestrator | User's Mac | `127.0.0.1:8000` |
 | Edge worker | Trusted Windows laptop | `127.0.0.1:8001` |
 | Cloud worker | Azure student VM | `127.0.0.1:8001` |
+| Public gateway | Azure student VM | `127.0.0.1:8002` (Nginx reverse proxy at `https://20-219-130-205.sslip.io`) |
 | Edge tunnel on Mac | User's Mac | `127.0.0.1:18001` |
 | Cloud tunnel on Mac | User's Mac | `127.0.0.1:18002` |
+| Reverse Edge tunnel on Azure | Azure student VM | `127.0.0.1:18001` (from HP Edge) |
 
-No worker API needs a public inbound firewall port. SSH is used for management and
-encrypted tunnelling; application requests use the worker HTTP API inside the
-tunnel.
+No worker API is directly exposed to the public internet. The Azure cloud worker binds to `127.0.0.1:8001`. A dedicated, memory-safe public gateway (`privacydrive.public_gateway`) runs on `127.0.0.1:8002` behind Nginx SSL at `https://20-219-130-205.sslip.io`. It exposes only `/api/status` and `/api/browser/summarize`, independently reclassifies inputs, blocks restricted/uncertain data from leaving the local client, and proxies permitted requests to loopback workers without persisting data.
 
 ## Worker command
 

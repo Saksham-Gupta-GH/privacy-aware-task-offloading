@@ -27,15 +27,17 @@ The default **Private workspace** now:
 - reads `.txt` and text-based `.pdf` files entirely in the browser;
 - classifies content before any remote request;
 - stores documents in browser IndexedDB rather than the application server;
-- previews extracted text and creates lightweight extractive summaries;
+- performs local vector indexing and semantic search via in-browser MiniLM WebAssembly (`onnx-community/all-MiniLM-L6-v2-ONNX` q4 via Transformers.js);
+- creates semantic extractive summaries using centroid relevance and Maximal Marginal Relevance (MMR);
 - runs a privacy-first latency/energy/availability optimizer in the browser;
-- executes restricted work locally and can dispatch permitted work to the trusted
-  edge or Azure worker;
-- reclassifies remotely dispatched text at the control plane so a modified browser
-  cannot bypass the privacy policy;
-- shows predicted costs, blocked tiers, the placement reason, and a real execution
-  receipt; and
+- executes restricted work locally and can dispatch permitted work to the trusted edge or Azure worker;
+- reclassifies remotely dispatched text at the Azure public gateway (`https://20-219-130-205.sslip.io`) so a modified browser cannot bypass the privacy policy;
+- shows predicted costs, blocked tiers, the placement reason, and a real execution receipt; and
 - rejects scanned PDFs honestly until OCR is explicitly added.
+
+**Live Deployment:**
+- Vercel Web Application: [https://privacy-aware-task-offloading.vercel.app](https://privacy-aware-task-offloading.vercel.app)
+- Azure Public Gateway: [https://20-219-130-205.sslip.io](https://20-219-130-205.sslip.io)
 
 The **Distributed demo** tab retains the measured local/edge/Azure embedding and smart
 search workflow. Browser classification, scheduling, and summarization have automated
