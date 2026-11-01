@@ -1,0 +1,69 @@
+[
+  {
+    "id": "public_event",
+    "file": "public_event.txt",
+    "expected": "public",
+    "purpose": "Ordinary public content with no identifier"
+  },
+  {
+    "id": "public_contact",
+    "file": "public_contact.txt",
+    "expected": "public",
+    "purpose": "Published email and phone should not automatically become personal"
+  },
+  {
+    "id": "personal_contacts",
+    "file": "personal_contacts.txt",
+    "expected": "personal",
+    "purpose": "Unlabelled fictional email and phone"
+  },
+  {
+    "id": "restricted_payment",
+    "file": "restricted_payment.txt",
+    "expected": "restricted",
+    "purpose": "Fictional test card with explicit payment context"
+  },
+  {
+    "id": "restricted_payment_hyphenated",
+    "file": "restricted_payment_hyphenated.txt",
+    "expected": "restricted",
+    "purpose": "Hyphenated card formatting"
+  },
+  {
+    "id": "restricted_confidential",
+    "file": "restricted_confidential.txt",
+    "expected": "restricted",
+    "purpose": "Explicit confidentiality marker"
+  },
+  {
+    "id": "restricted_health",
+    "file": "restricted_health.txt",
+    "expected": "restricted",
+    "purpose": "Health content linked to a fictional identity"
+  },
+  {
+    "id": "uncertain_card_like",
+    "file": "uncertain_card_like.txt",
+    "expected": "uncertain",
+    "purpose": "Valid card-like digits without enough context"
+  },
+  {
+    "id": "public_order_number",
+    "file": "public_order_number.txt",
+    "expected": "public",
+    "purpose": "Order identifier should not be misclassified as a card"
+  },
+  {
+    "id": "uncertain_empty",
+    "file": "uncertain_empty.txt",
+    "expected": "uncertain",
+    "purpose": "Conservative fallback when no readable content exists"
+  },
+  {
+    "id": "restricted_mixed",
+    "file": "restricted_mixed.txt",
+    "expected": "restricted",
+    "purpose": "Most restrictive signal wins in mixed content"
+  }
+]
+

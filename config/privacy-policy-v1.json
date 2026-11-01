@@ -1,0 +1,34 @@
+{
+  "version": "privacy-policy-v1",
+  "description": "Conservative policy for the PrivacyDrive classroom prototype",
+  "classes": {
+    "public": {
+      "display_name": "Public",
+      "allowed_destinations": ["local", "edge", "cloud"],
+      "description": "No blocking privacy signal was detected."
+    },
+    "personal": {
+      "display_name": "Personal",
+      "allowed_destinations": ["local", "edge"],
+      "description": "Personal identifiers may be processed locally or by the explicitly trusted edge."
+    },
+    "restricted": {
+      "display_name": "Restricted",
+      "allowed_destinations": ["local"],
+      "description": "Highly sensitive or explicitly confidential content must remain local."
+    },
+    "uncertain": {
+      "display_name": "Uncertain",
+      "allowed_destinations": ["local"],
+      "description": "Ambiguous or unsupported content remains local pending review."
+    }
+  },
+  "precedence": ["restricted", "uncertain", "personal", "public"],
+  "assumptions": [
+    "Classification occurs on the client before any remote transmission.",
+    "The edge worker is trusted by the prototype threat model.",
+    "Cloud is not trusted to receive personal or restricted raw document content.",
+    "Uncertain content uses the conservative local-only fallback."
+  ]
+}
+

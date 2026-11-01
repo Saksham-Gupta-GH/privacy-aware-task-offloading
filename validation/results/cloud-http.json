@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "measurement": "HTTP end-to-end through configured network/tunnel",
+  "worker": {
+    "worker_id": "azure-student-vm",
+    "tier": "cloud",
+    "state": "ready",
+    "ready": true,
+    "queue_depth": 0,
+    "model_id": "sentence-transformers/all-MiniLM-L6-v2",
+    "model_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "runtime": "onnxruntime",
+    "inference_batch_size": 1,
+    "platform": "Linux-6.17.0-1018-azure-x86_64-with-glibc2.39",
+    "uptime_seconds": 20.9
+  },
+  "seed": 20261101,
+  "warmups": 1,
+  "runs": 3,
+  "cases": {
+    "small": {
+      "passages": 1,
+      "end_to_end_samples_ms": [
+        1175.259,
+        518.674,
+        183.398
+      ],
+      "processing_samples_ms": [
+        80.508,
+        76.286,
+        73.952
+      ],
+      "end_to_end": {
+        "mean_ms": 625.777,
+        "median_ms": 518.674,
+        "min_ms": 183.398,
+        "max_ms": 1175.259
+      },
+      "worker_processing": {
+        "mean_ms": 76.915,
+        "median_ms": 76.286,
+        "min_ms": 73.952,
+        "max_ms": 80.508
+      },
+      "vector_dimensions": 384,
+      "model_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
+    },
+    "medium": {
+      "passages": 32,
+      "end_to_end_samples_ms": [
+        3907.643,
+        4002.319,
+        3912.631
+      ],
+      "processing_samples_ms": [
+        2389.966,
+        2389.634,
+        2405.856
+      ],
+      "end_to_end": {
+        "mean_ms": 3940.865,
+        "median_ms": 3912.631,
+        "min_ms": 3907.643,
+        "max_ms": 4002.319
+      },
+      "worker_processing": {
+        "mean_ms": 2395.152,
+        "median_ms": 2389.966,
+        "min_ms": 2389.634,
+        "max_ms": 2405.856
+      },
+      "vector_dimensions": 384,
+      "model_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
+    },
+    "heavy": {
+      "passages": 128,
+      "end_to_end_samples_ms": [
+        14861.522,
+        15441.439,
+        15846.532
+      ],
+      "processing_samples_ms": [
+        9564.676,
+        9798.459,
+        9535.504
+      ],
+      "end_to_end": {
+        "mean_ms": 15383.165,
+        "median_ms": 15441.439,
+        "min_ms": 14861.522,
+        "max_ms": 15846.532
+      },
+      "worker_processing": {
+        "mean_ms": 9632.88,
+        "median_ms": 9564.676,
+        "min_ms": 9535.504,
+        "max_ms": 9798.459
+      },
+      "vector_dimensions": 384,
+      "model_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
+    }
+  }
+}

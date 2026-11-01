@@ -1,0 +1,16 @@
+.DS_Store
+.model-cache/
+.pycache/
+__pycache__/
+*.py[cod]
+.venv/
+validation/.edge_ssh_config
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+data/*.db
+*.log
+2026 problem statements (2).docx
+

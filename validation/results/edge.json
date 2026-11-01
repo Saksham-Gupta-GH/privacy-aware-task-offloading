@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "model": {
+    "id": "sentence-transformers/all-MiniLM-L6-v2",
+    "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "max_tokens": 256,
+    "inference_batch_size": 32,
+    "precision": "float32",
+    "pooling": "attention-mask-aware mean pooling + L2 normalization"
+  },
+  "runtime": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "machine": "AMD64",
+    "processor": "AMD64 Family 23 Model 104 Stepping 1, AuthenticAMD",
+    "python": "3.12.4",
+    "torch": "2.8.0+cpu",
+    "transformers": "4.57.6",
+    "numpy": "1.26.2",
+    "torch_threads": 6
+  },
+  "seed": 20261101,
+  "warmups": 2,
+  "runs": 10,
+  "cold_model_load_ms": 233.154,
+  "cases": {
+    "small": {
+      "documents": 1,
+      "passages_per_document": 1,
+      "total_passages": 1,
+      "vector_shape": [
+        1,
+        384
+      ],
+      "reference_vector_head": [
+        -0.01667409,
+        0.08710316,
+        0.06892093,
+        0.01813708,
+        0.02760276,
+        -0.0518922,
+        -0.09311761,
+        -0.05239311
+      ],
+      "samples_ms": [
+        43.58,
+        43.581,
+        39.019,
+        38.575,
+        45.677,
+        39.806,
+        38.614,
+        41.747,
+        45.485,
+        43.229
+      ],
+      "mean_ms": 41.931,
+      "median_ms": 42.488,
+      "p95_ms": 45.677,
+      "stdev_ms": 2.771,
+      "coefficient_of_variation": 0.0661
+    },
+    "long": {
+      "documents": 1,
+      "passages_per_document": 32,
+      "total_passages": 32,
+      "vector_shape": [
+        32,
+        384
+      ],
+      "reference_vector_head": [
+        -0.01667409,
+        0.08710316,
+        0.06892093,
+        0.01813708,
+        0.02760276,
+        -0.0518922,
+        -0.09311761,
+        -0.05239311
+      ],
+      "samples_ms": [
+        1120.204,
+        1077.894,
+        1123.376,
+        1030.309,
+        973.065,
+        979.252,
+        1111.418,
+        1074.745,
+        1168.459,
+        1061.72
+      ],
+      "mean_ms": 1072.044,
+      "median_ms": 1076.319,
+      "p95_ms": 1168.459,
+      "stdev_ms": 63.331,
+      "coefficient_of_variation": 0.0591
+    },
+    "batch": {
+      "documents": 16,
+      "passages_per_document": 32,
+      "total_passages": 512,
+      "vector_shape": [
+        512,
+        384
+      ],
+      "reference_vector_head": [
+        -0.01667409,
+        0.08710316,
+        0.06892093,
+        0.01813708,
+        0.02760276,
+        -0.0518922,
+        -0.09311761,
+        -0.05239311
+      ],
+      "samples_ms": [
+        24047.187,
+        19272.008,
+        17571.425,
+        18408.198,
+        17882.907,
+        17137.759,
+        17629.748,
+        17101.199,
+        17593.419,
+        17599.425
+      ],
+      "mean_ms": 18424.327,
+      "median_ms": 17614.587,
+      "p95_ms": 24047.187,
+      "stdev_ms": 2075.361,
+      "coefficient_of_variation": 0.1126
+    }
+  }
+}

@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "model": {
+    "id": "sentence-transformers/all-MiniLM-L6-v2",
+    "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "max_tokens": 256,
+    "inference_batch_size": 32,
+    "precision": "float32",
+    "pooling": "attention-mask-aware mean pooling + L2 normalization"
+  },
+  "runtime": {
+    "platform": "macOS-14.4.1-arm64-arm-64bit",
+    "machine": "arm64",
+    "processor": "arm",
+    "python": "3.9.6",
+    "torch": "2.8.0",
+    "transformers": "4.57.6",
+    "numpy": "1.26.2",
+    "torch_threads": 1
+  },
+  "seed": 20261101,
+  "warmups": 2,
+  "runs": 10,
+  "cold_model_load_ms": 270.757,
+  "cases": {
+    "small": {
+      "documents": 1,
+      "passages_per_document": 1,
+      "total_passages": 1,
+      "vector_shape": [
+        1,
+        384
+      ],
+      "reference_vector_head": [
+        -0.01667412,
+        0.08710317,
+        0.06892093,
+        0.01813705,
+        0.02760274,
+        -0.05189221,
+        -0.09311756,
+        -0.05239306
+      ],
+      "samples_ms": [
+        26.032,
+        26.315,
+        26.376,
+        25.602,
+        30.546,
+        27.184,
+        25.397,
+        26.493,
+        26.111,
+        27.032
+      ],
+      "mean_ms": 26.709,
+      "median_ms": 26.346,
+      "p95_ms": 30.546,
+      "stdev_ms": 1.458,
+      "coefficient_of_variation": 0.0546
+    },
+    "long": {
+      "documents": 1,
+      "passages_per_document": 32,
+      "total_passages": 32,
+      "vector_shape": [
+        32,
+        384
+      ],
+      "reference_vector_head": [
+        -0.01667412,
+        0.08710317,
+        0.06892093,
+        0.01813705,
+        0.02760274,
+        -0.05189221,
+        -0.09311756,
+        -0.05239306
+      ],
+      "samples_ms": [
+        816.29,
+        824.401,
+        820.795,
+        816.33,
+        813.641,
+        808.474,
+        813.208,
+        817.735,
+        809.747,
+        815.508
+      ],
+      "mean_ms": 815.613,
+      "median_ms": 815.899,
+      "p95_ms": 824.401,
+      "stdev_ms": 4.768,
+      "coefficient_of_variation": 0.0058
+    },
+    "batch": {
+      "documents": 16,
+      "passages_per_document": 32,
+      "total_passages": 512,
+      "vector_shape": [
+        512,
+        384
+      ],
+      "reference_vector_head": [
+        -0.01667412,
+        0.08710317,
+        0.06892093,
+        0.01813705,
+        0.02760274,
+        -0.05189221,
+        -0.09311756,
+        -0.05239306
+      ],
+      "samples_ms": [
+        13708.759,
+        13303.971,
+        14384.738,
+        14769.886,
+        14556.148,
+        13619.45,
+        13755.133,
+        13940.595,
+        13853.513,
+        14839.339
+      ],
+      "mean_ms": 14073.153,
+      "median_ms": 13897.054,
+      "p95_ms": 14839.339,
+      "stdev_ms": 527.054,
+      "coefficient_of_variation": 0.0375
+    }
+  }
+}

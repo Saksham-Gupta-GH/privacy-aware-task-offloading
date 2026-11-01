@@ -1,0 +1,6 @@
+FICTIONAL MEDICAL RECORD
+
+Patient name: Rohan Sample
+Email: rohan.sample@example.test
+Diagnosis: Example condition used only for software testing.
+

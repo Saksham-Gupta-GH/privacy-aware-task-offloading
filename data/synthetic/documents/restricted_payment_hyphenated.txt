@@ -1,0 +1,6 @@
+FICTIONAL BILLING EXAMPLE
+
+Payment card: 4111-1111-1111-1111
+Expiry: 09/31
+No real person or account is represented.
+
