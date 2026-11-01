@@ -20,6 +20,21 @@ objectives only after disallowed destinations have been removed.
 - Calibrated experiments compare the proposed method with always-local,
   always-cloud, and latency-only baselines, including privacy violations.
 
+## Browser-private frontend
+
+The deployed-frontend migration has started without removing the tested distributed
+prototype. The default **Private workspace** now:
+
+- reads `.txt` and text-based `.pdf` files entirely in the browser;
+- classifies content before any remote request;
+- stores documents in browser IndexedDB rather than the application server;
+- previews extracted text and creates lightweight extractive summaries locally; and
+- rejects scanned PDFs honestly until OCR is explicitly added.
+
+The **Distributed demo** tab retains the measured local/edge/Azure embedding workflow
+while its secure browser-to-worker control path is developed. The browser classifier and
+summarizer have automated TypeScript tests.
+
 ## Architecture
 
 ```text
@@ -88,6 +103,7 @@ presentation-day checklist.
 ```bash
 .venv/bin/python -m unittest discover -s tests -v
 .venv/bin/python scripts/run_scheduler_experiments.py
+npm --prefix frontend test
 npm --prefix frontend run build
 PRIVACYDRIVE_DATABASE=/tmp/privacydrive-smoke.db \
   .venv/bin/python scripts/smoke_test.py

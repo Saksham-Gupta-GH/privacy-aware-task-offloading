@@ -1,4 +1,5 @@
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { BrowserWorkspace } from "./browser/BrowserWorkspace";
 
 type Classification = {
   sensitivity: "public" | "personal" | "restricted" | "uncertain";
@@ -53,7 +54,7 @@ const fmtMs = (value: number | null) => value == null ? "—" : value < 1000 ? `
 const fmtEnergy = (value: number | null) => value == null ? "—" : `${value.toFixed(3)} J`;
 
 function App() {
-  const [tab, setTab] = useState<"workspace" | "experiments">("workspace");
+  const [tab, setTab] = useState<"browser" | "workspace" | "experiments">("browser");
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
   const [workers, setWorkers] = useState<Record<string, Worker>>({});
@@ -148,7 +149,8 @@ function App() {
       <aside className="sidebar">
         <div className="brand"><div className="brand-mark">P</div><div><strong>PrivacyDrive</strong><span>Edge-aware workspace</span></div></div>
         <nav>
-          <button className={tab === "workspace" ? "active" : ""} onClick={() => setTab("workspace")}><span>▦</span> Workspace</button>
+          <button className={tab === "browser" ? "active" : ""} onClick={() => setTab("browser")}><span>◉</span> Private workspace</button>
+          <button className={tab === "workspace" ? "active" : ""} onClick={() => setTab("workspace")}><span>▦</span> Distributed demo</button>
           <button className={tab === "experiments" ? "active" : ""} onClick={openExperiments}><span>⌁</span> Experiments</button>
         </nav>
         <div className="sidebar-spacer" />
@@ -161,7 +163,7 @@ function App() {
 
       <main>
         <header className="topbar">
-          <div><span className="eyebrow">MOBILE EDGE COMPUTING</span><h1>{tab === "workspace" ? "Secure document workspace" : "Research evidence"}</h1></div>
+          <div><span className="eyebrow">MOBILE EDGE COMPUTING</span><h1>{tab === "browser" ? "Private document workspace" : tab === "workspace" ? "Distributed offloading demo" : "Research evidence"}</h1></div>
           <div className="worker-strip">
             {["local", "edge", "cloud"].map((tier) => {
               const worker = workers[tier]; const online = worker?.available && worker?.ready;
@@ -172,7 +174,7 @@ function App() {
 
         {error && <div className="error-banner">{error}<button onClick={() => setError("")}>×</button></div>}
 
-        {tab === "workspace" ? <>
+        {tab === "browser" ? <BrowserWorkspace /> : tab === "workspace" ? <>
           <section className="toolbar">
             <div className="search-box"><span>⌕</span><input value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && search()} placeholder="Search your processed documents by meaning…" /><button onClick={search}>Search locally</button></div>
             <label className="upload-button">＋ Add text file<input type="file" accept=".txt,text/plain" onChange={upload} /></label>
