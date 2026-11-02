@@ -18,10 +18,11 @@ No worker API is directly exposed to the public internet. The Azure cloud worker
 
 The gateway stores account profiles, password hashes, and revocable session hashes in a
 small SQLite database. It never stores uploaded documents, summaries, embeddings, or
-search queries. Set a persistent location in the gateway service environment:
+search queries. The gateway launcher stores it in the ignored `data/` directory by
+default. To keep it elsewhere, set a persistent directory before starting the service:
 
 ```bash
-PRIVACYDRIVE_AUTH_DATABASE=/var/lib/privacydrive/auth.db
+PRIVACYDRIVE_AUTH_DIR=/var/lib/privacydrive ./scripts/start_public_gateway.sh
 ```
 
 Create the directory with write access for the gateway service user and include the
