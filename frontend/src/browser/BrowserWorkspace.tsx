@@ -275,24 +275,56 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
     <div className="google-workspace-container">
       {error && <div className="error-banner">{error}<button onClick={() => setError("")}>×</button></div>}
 
-      <section className="google-hero-banner">
-        <div className="hero-content">
-          <span className="google-chip">ON-DEVICE EDGE PRIVACY</span>
-          <h2>Private Document Intelligence</h2>
-          <p>Client-side classification, vector search, and privacy-governed computation offloading.</p>
+      {/* MoveInSync-Style Page Title Area */}
+      <section className="moveinsync-title-section">
+        <div className="title-text-block">
+          <h1>Policy management</h1>
+          <p>Review and enforce privacy-aware offloading rules across Local, Edge, and Cloud tiers.</p>
         </div>
-        <div className="hero-actions">
-          <button className="google-pill-btn secondary" onClick={loadDemoSet}>
-            <IconSparkle size={15} /> Load Fictional Demo
+        <div className="workspace-admin-badge">
+          <span>Demo workspace · Administrator</span>
+        </div>
+      </section>
+
+      {/* MoveInSync-Style Filter & Action Strip */}
+      <section className="moveinsync-filter-strip">
+        <div className="filter-left-group">
+          <span className="filter-label">View policies for</span>
+          <div className="filter-select-wrapper">
+            <select value={scenario} onChange={(event) => setScenario(event.target.value)}>
+              <option value="live">Live Worker State</option>
+              <option value="client_busy">Simulated: Client Busy (Queue Contention)</option>
+              <option value="edge_busy">Simulated: Edge Busy</option>
+              <option value="client_and_edge_busy">Simulated: Client + Edge Busy</option>
+            </select>
+          </div>
+          <span className="filter-slash">/</span>
+          <div className="filter-select-wrapper">
+            <select value={latencyWeight} onChange={(event) => setLatencyWeight(Number(event.target.value))}>
+              <option value={65}>Goal: 65% Latency · 35% Energy</option>
+              <option value={100}>Goal: 100% Latency (Fastest)</option>
+              <option value={0}>Goal: 100% Battery Preservation</option>
+              <option value={50}>Goal: Balanced (50% / 50%)</option>
+            </select>
+          </div>
+          <span className="filter-slash">/</span>
+          <div className="filter-select-wrapper">
+            <span className="filter-static-item">All Classifications</span>
+          </div>
+        </div>
+
+        <div className="filter-right-actions">
+          <button className="moveinsync-btn-demo" onClick={loadDemoSet} title="Load fictional documents for testing">
+            <IconSparkle size={14} /> Demo tools
           </button>
-          <label className="google-pill-btn primary">
-            {readingFile ? "Reading locally…" : "＋ Add Document / PDF"}
-            <input disabled={busy} type="file" accept=".txt,.pdf,text/plain,application/pdf" onChange={upload} />
+          <label className="moveinsync-btn-primary">
+            + New document
+            <input disabled={busy} type="file" accept=".txt,.pdf,text/plain,application/pdf" onChange={upload} style={{ display: "none" }} />
           </label>
         </div>
       </section>
 
-      {/* Google-Style Smart Search Bar */}
+      {/* Google/MoveInSync Smart Search Bar */}
       <section className="google-search-section">
         <div className="google-search-bar">
           <span className="search-icon">
@@ -302,7 +334,7 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={(event) => event.key === "Enter" && searchLocally()}
-            placeholder="Search documents by meaning (e.g., 'Azure workshop', 'internship', 'card details')…"
+            placeholder="Search policies and processed documents by meaning (e.g., 'Azure workshop', 'internship', 'card details')…"
           />
           <button className="search-action-btn" disabled={busy} onClick={searchLocally}>
             {busy ? "Searching…" : "Search"}

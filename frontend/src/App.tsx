@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { BrowserWorkspace } from "./browser/BrowserWorkspace";
-import { IconLogo } from "./components/Icons";
+import { IconBrandLogo, IconCloud, IconGitHub } from "./components/Icons";
 
 type Worker = { tier: string; available: boolean; ready: boolean; queue_depth: number; detail: string };
 
@@ -37,36 +37,55 @@ function App() {
     refreshWorkers().catch(() => undefined);
   }, []);
 
+  const cloudOnline = workers.cloud?.available && workers.cloud?.ready;
+
   return (
     <div className="google-app-shell">
-      {/* Top Google-style Navigation Bar */}
-      <header className="google-nav-header">
-        <div className="nav-inner">
-          <div className="brand-block">
-            <span className="brand-logo-icon">
-              <IconLogo size={20} />
-            </span>
-            <strong className="brand-name">PrivacyDrive</strong>
-            <span className="brand-tag">MEC Research</span>
+      {/* MoveInSync-Style Clean Header */}
+      <header className="moveinsync-header">
+        <div className="header-inner">
+          <div className="brand-group">
+            <IconBrandLogo size={32} />
+            <div className="brand-titles">
+              <strong className="brand-title-main">PrivacyDrive</strong>
+              <span className="brand-title-sub">MEC Cloud Offloading</span>
+            </div>
           </div>
 
-          <div className="worker-status-pills">
-            {["local", "edge", "cloud"].map((tier) => {
-              const worker = workers[tier];
-              const online = worker?.available && worker?.ready;
-              return (
-                <div className={`status-pill ${online ? "online" : "offline"}`} key={tier} title={worker?.detail || ""}>
-                  <i className={`beacon-dot ${online ? "pulse" : ""}`} />
-                  <span className="tier-label">{tier}</span>
-                  <b className="state-label">{online ? "Ready" : "Offline"}</b>
-                </div>
-              );
-            })}
+          <nav className="header-nav-center">
+            <span className="nav-item active">Offloading Policies</span>
+            <span className="nav-item">Service Status</span>
+          </nav>
+
+          <div className="header-right-group">
+            <div className="stream-live-pill">
+              <span className="live-dot" />
+              <span>Stream Live</span>
+            </div>
+
+            <div className={`cloud-pill-badge ${cloudOnline ? "online" : "offline"}`} title={workers.cloud?.detail || "Azure Cloud VM"}>
+              <IconCloud size={14} />
+              <span>Azure Cloud VM</span>
+            </div>
+
+            <a
+              href="https://github.com/Saksham-Gupta-GH/privacy-aware-task-offloading"
+              target="_blank"
+              rel="noreferrer"
+              className="github-header-btn"
+            >
+              <IconGitHub size={14} />
+              <span>GitHub</span>
+            </a>
+
+            <div className="user-avatar-circle" title="Saksham Gupta · Administrator">
+              S
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="google-main">
+      <main className="moveinsync-main">
         {error && (
           <div className="error-banner">
             {error}
