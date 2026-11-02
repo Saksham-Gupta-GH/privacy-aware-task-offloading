@@ -15,10 +15,7 @@ import {
   IconSparkle,
   IconCloud,
   IconLaptop,
-  IconServer,
-  IconSidebar,
-  IconUpload,
-  IconFileText
+  IconServer
 } from "../components/Icons";
 
 const badgeClass = (value: string) => `badge badge-${value}`;
@@ -66,7 +63,6 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<BrowserSearchResult[]>([]);
   const [deleteArmed, setDeleteArmed] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const selected = useMemo(
     () => documents.find((document) => document.id === selectedId) ?? documents[0],
@@ -276,38 +272,27 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
     : 0;
 
   return (
-    <div className={`google-workspace-container ${sidebarOpen ? "sidebar-visible" : "sidebar-collapsed"}`}>
+    <div className="google-workspace-container">
       {error && <div className="error-banner">{error}<button onClick={() => setError("")}>×</button></div>}
 
-      {/* MoveInSync-Style Page Title Area with Sidebar Toggle */}
+      {/* MoveInSync-Style Page Title Area */}
       <section className="moveinsync-title-section">
-        <div className="title-left-group">
-          <button
-            className={`sidebar-pill-toggle ${sidebarOpen ? "active" : ""}`}
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            title={sidebarOpen ? "Hide Documents Sidebar" : "Show Documents Sidebar"}
-          >
-            <IconSidebar size={15} />
-            <span>Files ({documents.length})</span>
-          </button>
-          <div className="title-text-block">
-            <h1>Policy management</h1>
-            <p>Review and enforce privacy-aware offloading rules across Local, Edge, and Cloud tiers.</p>
-          </div>
+        <div className="title-text-block">
+          <h1>Policy management</h1>
+          <p>Review and enforce privacy-aware offloading rules across Local, Edge, and Cloud tiers.</p>
         </div>
-
         <div className="title-right-actions">
           <button className="moveinsync-btn-demo" onClick={loadDemoSet} title="Load fictional documents for testing">
             <IconSparkle size={14} /> Demo tools
           </button>
           <label className="moveinsync-btn-primary">
-            <IconUpload size={14} /> Upload document
+            + New document
             <input disabled={busy} type="file" accept=".txt,.pdf,text/plain,application/pdf" onChange={upload} style={{ display: "none" }} />
           </label>
         </div>
       </section>
 
-      {/* Smart Search Bar */}
+      {/* Google/MoveInSync Smart Search Bar */}
       <section className="google-search-section">
         <div className="google-search-bar">
           <span className="search-icon">
@@ -355,28 +340,16 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
         )}
       </section>
 
-      {/* Main Studio Area: Collapsible Left Sidebar + Full Stage */}
-      <div className="studio-layout">
-        {/* Backdrop for mobile */}
-        {sidebarOpen && <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />}
-
-        {/* Collapsible Left Sidebar */}
-        <aside className={`studio-sidebar ${sidebarOpen ? "open" : "collapsed"}`}>
-          <div className="sidebar-header">
-            <div className="sidebar-title-group">
-              <span className="sidebar-title">Private Documents</span>
-              <span className="badge-pill">{documents.length}</span>
+      <div className="google-two-col-layout">
+        {/* Left Column: Document File List */}
+        <section className="google-card file-panel-card">
+          <div className="card-header">
+            <div>
+              <span className="eyebrow">INDEXEDDB ENCLAVE</span>
+              <h3>Private Documents</h3>
             </div>
-            <button className="sidebar-close-btn" onClick={() => setSidebarOpen(false)} title="Close Sidebar">
-              ×
-            </button>
+            <span className="badge-pill">{documents.length} files</span>
           </div>
-
-          <label className="sidebar-upload-trigger">
-            <IconUpload size={15} />
-            <span>Upload .txt or .pdf</span>
-            <input disabled={busy} type="file" accept=".txt,.pdf,text/plain,application/pdf" onChange={upload} style={{ display: "none" }} />
-          </label>
 
           <div className="file-list-view">
             {documents.map((document) => (
@@ -399,39 +372,26 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
             ))}
             {!documents.length && (
               <div className="empty-state">
-                <p>Upload a file or click Demo tools.</p>
+                <p>Upload a text file or PDF, or click <b>Load Fictional Demo</b> above.</p>
               </div>
             )}
           </div>
-        </aside>
+        </section>
 
-        {/* Unified Main Workbench */}
-        <main className="studio-main-workbench">
+        {/* Right Column: Privacy Inspector & Actions */}
+        <section className="google-card inspector-card">
           {selected ? (
-            <div className="workbench-stage">
-              {/* Document Stage Header */}
-              <div className="workbench-header">
-                <div className="workbench-title-group">
-                  <div className="doc-icon-badge">
-                    <IconFileText size={20} />
-                  </div>
-                  <div>
-                    <h2 className="workbench-doc-title">{selected.name}</h2>
-                    <span className="workbench-doc-sub">Local Enclave · Ready for Offloading Evaluation</span>
-                  </div>
+            <>
+              <div className="card-header">
+                <div>
+                  <span className="eyebrow">PRIVACY INSPECTION & CONTROL</span>
+                  <h3>{selected.name}</h3>
                 </div>
-
-                <div className="workbench-header-actions">
-                  <em className={badgeClass(selected.classification.sensitivity)}>
-                    {selected.classification.displayName}
-                  </em>
-                  <button className="google-pill-btn primary" disabled={busy} onClick={summarize}>
-                    {busy ? "Evaluating & Offloading…" : "Evaluate & Offload Task →"}
-                  </button>
-                </div>
+                <em className={badgeClass(selected.classification.sensitivity)}>
+                  {selected.classification.displayName}
+                </em>
               </div>
 
-              {/* Admission Policy Reasons */}
               <div className="privacy-explanation-box">
                 <div className="expl-header">
                   <span className="shield-icon" style={{ display: "inline-flex", alignItems: "center" }}>
@@ -446,13 +406,12 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
                 </div>
               </div>
 
-              {/* Archival Content Preview */}
               <div className="extracted-text-preview">
                 <div className="preview-label">Document Content Preview</div>
                 <pre>{selected.content.slice(0, 700)}{selected.content.length > 700 ? "…" : ""}</pre>
               </div>
 
-              {/* Optimizer Controls */}
+              {/* Optimization Sliders */}
               <div className="optimizer-controls">
                 <div className="slider-row">
                   <div className="slider-label">
@@ -485,9 +444,11 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
                 </div>
               )}
 
-              {/* Auxiliary actions */}
-              <div className="workbench-footer-actions">
-                <button className="google-pill-btn secondary" disabled={busy} onClick={indexSelected}>
+              <div className="inspector-actions">
+                <button className="google-pill-btn primary full" disabled={busy} onClick={summarize}>
+                  {busy ? "Evaluating & Processing…" : "Evaluate & Offload Task →"}
+                </button>
+                <button className="google-pill-btn secondary full" disabled={busy} onClick={indexSelected}>
                   <IconBolt size={14} /> {selected.searchPassages?.length ? "Refresh Vector Index" : "Prepare for Smart Search"}
                 </button>
                 <button
@@ -497,124 +458,121 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
                   {deleteArmed ? "Confirm Removal from Device" : "Remove from This Device"}
                 </button>
               </div>
-
-              {/* Decision Section */}
-              {decision && (
-                <section className="workbench-decision-section">
-                  <div className="decision-header">
-                    <span className="eyebrow">SCHEDULER PLACEMENT DECISION</span>
-                    <h3>{decision.selectedTier ? `${decision.selectedTier.toUpperCase()} Selected` : "Task Deferred"}</h3>
-                    <p className="subtext">{decision.explanation}</p>
-                  </div>
-                  <div className="tier-cards-grid">
-                    {decision.candidates.map((candidate) => (
-                      <article key={candidate.tier} className={`candidate-tier-card ${candidate.selected ? "selected" : candidate.privacyAllowed ? "" : "blocked"}`}>
-                        <div className="tier-card-head">
-                          <div className="tier-brand">
-                            <span className="tier-icon" style={{ display: "inline-flex", alignItems: "center" }}>
-                              {candidate.tier === "local" ? <IconLaptop size={16} /> : candidate.tier === "edge" ? <IconServer size={16} /> : <IconCloud size={16} />}
-                            </span>
-                            <strong>{candidate.tier.toUpperCase()}</strong>
-                          </div>
-                          {candidate.selected && <span className="winner-tag">Selected</span>}
-                        </div>
-                        <dl className="tier-stats">
-                          <div>
-                            <dt>Privacy</dt>
-                            <dd className={candidate.privacyAllowed ? "allowed" : "denied"}>{candidate.privacyAllowed ? "Allowed" : "Blocked"}</dd>
-                          </div>
-                          <div>
-                            <dt>Availability</dt>
-                            <dd>{candidate.available ? "Ready" : "Unavailable"}</dd>
-                          </div>
-                          <div>
-                            <dt>Predicted Latency</dt>
-                            <dd>{formatMs(candidate.predictedLatencyMs)}</dd>
-                          </div>
-                          <div>
-                            <dt>Estimated Energy</dt>
-                            <dd>{formatEnergy(candidate.estimatedDeviceEnergyJ)}</dd>
-                          </div>
-                        </dl>
-                        <p className="candidate-reason">{candidate.reason}</p>
-                      </article>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* Executive Summary Section */}
-              {selected?.summary && (
-                <section className="workbench-summary-section">
-                  <div className="summary-header">
-                    <div>
-                      <span className="eyebrow">SEMANTIC EXECUTIVE BRIEFING</span>
-                      <h3>Executive Takeaways</h3>
-                    </div>
-                    <div className="summary-pill-strip">
-                      {compressionRatio > 0 && (
-                        <span className="stat-pill" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                          <IconBolt size={13} /> -{compressionRatio}% Condensed
-                        </span>
-                      )}
-                      <span className="stat-pill">{summaryBullets.length} Key Points</span>
-                      <span className="execution-tag" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                        {displayedSummaryTier === "local" ? (
-                          <>
-                            <IconShield size={14} /> Local Processing (Zero Network)
-                          </>
-                        ) : (
-                          <>
-                            <IconCloud size={14} /> Verified {displayedSummaryTier.toUpperCase()} Execution
-                          </>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="executive-bullets-container">
-                    <ul className="executive-bullets-list">
-                      {summaryBullets.map((bullet, idx) => (
-                        <li key={idx} className="bullet-item">
-                          <span className="check-icon" style={{ display: "inline-flex", alignItems: "center" }}>
-                            <IconCheck size={14} />
-                          </span>
-                          <span className="bullet-text">{bullet}</span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    {tags.length > 0 && (
-                      <div className="topics-row">
-                        <span className="topics-heading">Core Entities:</span>
-                        {tags.map((tag, idx) => (
-                          <span key={idx} className="topic-pill-chip">{tag}</span>
-                        ))}
-                      </div>
-                    )}
-
-                    {selected.receipt && (
-                      <div className="receipt-bar">
-                        <span>Cryptographic Execution Receipt</span>
-                        <code>{String(selected.receipt.receipt_id).slice(0, 8)} · {String(selected.receipt.worker_id)} · {String(selected.receipt.processing_ms)} ms</code>
-                      </div>
-                    )}
-                  </div>
-                </section>
-              )}
-            </div>
+            </>
           ) : (
-            <div className="empty-workbench">
-              <IconFileText size={44} />
-              <h3>No Document Selected</h3>
-              <p>Click the <b>Files ({documents.length})</b> button on the left to select a document or load fictional demo files.</p>
-              <button className="google-pill-btn secondary" onClick={() => setSidebarOpen(true)}>
-                <IconSidebar size={15} /> Open Documents Sidebar
-              </button>
+            <div className="empty-state">
+              <p>Select a document from the left to inspect its privacy classification and offload tasks.</p>
             </div>
           )}
-        </main>
+        </section>
       </div>
+
+      {/* Decision Card */}
+      {decision && (
+        <section className="google-card decision-section">
+          <div className="card-header">
+            <div>
+              <span className="eyebrow">SCHEDULER PLACEMENT DECISION</span>
+              <h3>{decision.selectedTier ? `${decision.selectedTier.toUpperCase()} Selected` : "Task Deferred"}</h3>
+              <p className="subtext">{decision.explanation}</p>
+            </div>
+          </div>
+          <div className="tier-cards-grid">
+            {decision.candidates.map((candidate) => (
+              <article key={candidate.tier} className={`candidate-tier-card ${candidate.selected ? "selected" : candidate.privacyAllowed ? "" : "blocked"}`}>
+                <div className="tier-card-head">
+                  <div className="tier-brand">
+                    <span className="tier-icon" style={{ display: "inline-flex", alignItems: "center" }}>
+                      {candidate.tier === "local" ? <IconLaptop size={16} /> : candidate.tier === "edge" ? <IconServer size={16} /> : <IconCloud size={16} />}
+                    </span>
+                    <strong>{candidate.tier.toUpperCase()}</strong>
+                  </div>
+                  {candidate.selected && <span className="winner-tag">Selected</span>}
+                </div>
+                <dl className="tier-stats">
+                  <div>
+                    <dt>Privacy</dt>
+                    <dd className={candidate.privacyAllowed ? "allowed" : "denied"}>{candidate.privacyAllowed ? "Allowed" : "Blocked"}</dd>
+                  </div>
+                  <div>
+                    <dt>Availability</dt>
+                    <dd>{candidate.available ? "Ready" : "Unavailable"}</dd>
+                  </div>
+                  <div>
+                    <dt>Predicted Latency</dt>
+                    <dd>{formatMs(candidate.predictedLatencyMs)}</dd>
+                  </div>
+                  <div>
+                    <dt>Estimated Energy</dt>
+                    <dd>{formatEnergy(candidate.estimatedDeviceEnergyJ)}</dd>
+                  </div>
+                </dl>
+                <p className="candidate-reason">{candidate.reason}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Executive Summary Card */}
+      {selected?.summary && (
+        <section className="google-card executive-summary-section">
+          <div className="card-header">
+            <div>
+              <span className="eyebrow">SEMANTIC EXECUTIVE BRIEFING</span>
+              <h3>Executive Takeaways</h3>
+            </div>
+            <div className="summary-pill-strip">
+              {compressionRatio > 0 && (
+                <span className="stat-pill" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                  <IconBolt size={13} /> -{compressionRatio}% Condensed
+                </span>
+              )}
+              <span className="stat-pill">{summaryBullets.length} Key Points</span>
+              <span className="execution-tag" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                {displayedSummaryTier === "local" ? (
+                  <>
+                    <IconShield size={14} /> Local Processing (Zero Network)
+                  </>
+                ) : (
+                  <>
+                    <IconCloud size={14} /> Verified {displayedSummaryTier.toUpperCase()} Execution
+                  </>
+                )}
+              </span>
+            </div>
+          </div>
+
+          <div className="executive-bullets-container">
+            <ul className="executive-bullets-list">
+              {summaryBullets.map((bullet, idx) => (
+                <li key={idx} className="bullet-item">
+                  <span className="check-icon" style={{ display: "inline-flex", alignItems: "center" }}>
+                    <IconCheck size={14} />
+                  </span>
+                  <span className="bullet-text">{bullet}</span>
+                </li>
+              ))}
+            </ul>
+
+            {tags.length > 0 && (
+              <div className="topics-row">
+                <span className="topics-heading">Core Entities:</span>
+                {tags.map((tag, idx) => (
+                  <span key={idx} className="topic-pill-chip">{tag}</span>
+                ))}
+              </div>
+            )}
+
+            {selected.receipt && (
+              <div className="receipt-bar">
+                <span>Cryptographic Execution Receipt</span>
+                <code>{String(selected.receipt.receipt_id).slice(0, 8)} · {String(selected.receipt.worker_id)} · {String(selected.receipt.processing_ms)} ms</code>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
