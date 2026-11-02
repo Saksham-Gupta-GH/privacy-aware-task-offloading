@@ -7,6 +7,16 @@ import { calibrateScore, dot, extractKeyTags } from "./semantic";
 import { listBrowserDocuments, removeBrowserDocument, saveBrowserDocument } from "./storage";
 import { summarizeExtractively } from "./summarize";
 import { BrowserDocument, BrowserSearchResult } from "./types";
+import {
+  IconSearch,
+  IconShield,
+  IconCheck,
+  IconBolt,
+  IconSparkle,
+  IconCloud,
+  IconLaptop,
+  IconServer
+} from "../components/Icons";
 
 const badgeClass = (value: string) => `badge badge-${value}`;
 const DEMO_DOCUMENTS = [
@@ -273,7 +283,7 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
         </div>
         <div className="hero-actions">
           <button className="google-pill-btn secondary" onClick={loadDemoSet}>
-            <span>✦</span> Load Fictional Demo
+            <IconSparkle size={15} /> Load Fictional Demo
           </button>
           <label className="google-pill-btn primary">
             {readingFile ? "Reading locally…" : "＋ Add Document / PDF"}
@@ -285,7 +295,9 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
       {/* Google-Style Smart Search Bar */}
       <section className="google-search-section">
         <div className="google-search-bar">
-          <span className="search-icon">🔍</span>
+          <span className="search-icon">
+            <IconSearch size={16} />
+          </span>
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
@@ -297,7 +309,9 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
           </button>
         </div>
         <div className="search-status-bar">
-          <span>🛡️ {modelStatus}</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <IconShield size={14} /> {modelStatus}
+          </span>
           <span className="privacy-guarantee">Queries never leave this browser</span>
         </div>
 
@@ -349,7 +363,7 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
                 </div>
                 <div className="file-meta">
                   <b>{document.name}</b>
-                  <small>{document.searchPassages?.length ? "✓ Smart-search ready" : "Stored locally"}</small>
+                  <small>{document.searchPassages?.length ? "Indexed · Ready" : "Stored locally"}</small>
                 </div>
                 <em className={badgeClass(document.classification.sensitivity)}>
                   {document.classification.displayName}
@@ -380,7 +394,9 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
 
               <div className="privacy-explanation-box">
                 <div className="expl-header">
-                  <span className="shield-icon">🛡️</span>
+                  <span className="shield-icon" style={{ display: "inline-flex", alignItems: "center" }}>
+                    <IconShield size={16} />
+                  </span>
                   <b>Admission Policy Reasons</b>
                 </div>
                 <p>{selected.classification.reasons.join(" ")}</p>
@@ -424,7 +440,7 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
 
               {scenario !== "live" && (
                 <div className="simulation-pill-note">
-                  ⚡ Simulated queue pressure affects scheduler placement; execution and receipts remain real.
+                  Simulated queue pressure affects scheduler placement; execution and receipts remain real.
                 </div>
               )}
 
@@ -466,7 +482,9 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
               <article key={candidate.tier} className={`candidate-tier-card ${candidate.selected ? "selected" : candidate.privacyAllowed ? "" : "blocked"}`}>
                 <div className="tier-card-head">
                   <div className="tier-brand">
-                    <span className="tier-icon">{candidate.tier === "local" ? "▣" : candidate.tier === "edge" ? "◇" : "☁"}</span>
+                    <span className="tier-icon" style={{ display: "inline-flex", alignItems: "center" }}>
+                      {candidate.tier === "local" ? <IconLaptop size={16} /> : candidate.tier === "edge" ? <IconServer size={16} /> : <IconCloud size={16} />}
+                    </span>
                     <strong>{candidate.tier.toUpperCase()}</strong>
                   </div>
                   {candidate.selected && <span className="winner-tag">Selected</span>}
@@ -505,10 +523,22 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
               <h3>Executive Takeaways</h3>
             </div>
             <div className="summary-pill-strip">
-              {compressionRatio > 0 && <span className="stat-pill">⚡ -{compressionRatio}% Condensed</span>}
+              {compressionRatio > 0 && (
+                <span className="stat-pill" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                  <IconBolt size={13} /> -{compressionRatio}% Condensed
+                </span>
+              )}
               <span className="stat-pill">{summaryBullets.length} Key Points</span>
-              <span className="execution-tag">
-                {displayedSummaryTier === "local" ? "🛡️ Local Processing (Zero Network)" : `☁️ Verified ${displayedSummaryTier.toUpperCase()} Execution`}
+              <span className="execution-tag" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                {displayedSummaryTier === "local" ? (
+                  <>
+                    <IconShield size={14} /> Local Processing (Zero Network)
+                  </>
+                ) : (
+                  <>
+                    <IconCloud size={14} /> Verified {displayedSummaryTier.toUpperCase()} Execution
+                  </>
+                )}
               </span>
             </div>
           </div>
@@ -517,7 +547,9 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
             <ul className="executive-bullets-list">
               {summaryBullets.map((bullet, idx) => (
                 <li key={idx} className="bullet-item">
-                  <span className="check-icon">✓</span>
+                  <span className="check-icon" style={{ display: "inline-flex", alignItems: "center" }}>
+                    <IconCheck size={14} />
+                  </span>
                   <span className="bullet-text">{bullet}</span>
                 </li>
               ))}

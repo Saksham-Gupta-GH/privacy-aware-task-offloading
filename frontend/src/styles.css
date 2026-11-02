@@ -69,6 +69,12 @@ button { cursor: pointer; }
   align-items: center;
   gap: 10px;
 }
+.brand-logo-icon {
+  color: var(--google-blue);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 .brand-dot {
   color: var(--google-blue);
   font-size: 22px;
