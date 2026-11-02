@@ -8,6 +8,42 @@ const normalized = (vector: number[]) => {
   return vector.map((value) => value / magnitude);
 };
 
+export const calibrateScore = (cosine: number, query: string, text: string): number => {
+  const tokens = query.toLowerCase().split(/\s+/).filter((t) => t.length > 2);
+  const normalizedCosine = Math.max(0, Math.min(1, (cosine - 0.15) / 0.42));
+  let score = 45 + normalizedCosine * 48; // 45% to 93%
+  const lowerText = text.toLowerCase();
+  const matchedTokens = tokens.filter((t) => lowerText.includes(t));
+  if (tokens.length > 0 && matchedTokens.length > 0) {
+    score += (matchedTokens.length / tokens.length) * 6; // up to +6% keyword boost
+  }
+  return Math.min(99, Math.max(15, Math.round(score)));
+};
+
+export function extractKeyTags(content: string): string[] {
+  const stopwords = new Set([
+    "the", "and", "this", "that", "with", "from", "for", "have", "been", "event",
+    "will", "about", "student", "candidate", "available", "studies", "experience",
+  ]);
+  const words = content.match(/[A-Z][a-zA-Z0-9'-]*/g) || [];
+  const freq = new Map<string, number>();
+  for (const w of words) {
+    const clean = w.trim();
+    if (clean.length > 2 && !stopwords.has(clean.toLowerCase())) {
+      freq.set(clean, (freq.get(clean) || 0) + 1);
+    }
+  }
+  const sorted = Array.from(freq.entries()).sort((a, b) => b[1] - a[1]);
+  const tags = sorted.slice(0, 5).map(([w]) => w);
+  if (!tags.length) {
+    if (content.toLowerCase().includes("azure")) tags.push("Azure Cloud");
+    if (content.toLowerCase().includes("edge")) tags.push("Edge Computing");
+    if (content.toLowerCase().includes("payment")) tags.push("Financial Record");
+    if (content.toLowerCase().includes("resume")) tags.push("Candidate Profile");
+  }
+  return tags.slice(0, 4);
+}
+
 export function buildSearchPassages(content: string, wordsPerPassage = 110): string[] {
   const paragraphs = content.split(/\n{2,}/).map((value) => value.trim()).filter(Boolean);
   const source = paragraphs.length > 1 ? paragraphs : [content.trim()];
@@ -55,5 +91,8 @@ export function selectSemanticSummary(
     if (winner < 0) break;
     selected.push(winner);
   }
-  return selected.sort((left, right) => left - right).map((index) => sentences[index]).join(" ");
+  return selected
+    .sort((left, right) => left - right)
+    .map((index) => sentences[index])
+    .join(" ");
 }

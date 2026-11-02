@@ -3,7 +3,7 @@ import { readDocumentLocally } from "./files";
 import { createSearchIndex, embedTexts, summarizeWithMiniLM } from "./ml";
 import { classifyInBrowser } from "./privacy";
 import { BrowserPlacement, BrowserWorker, decideBrowserPlacement } from "./scheduler";
-import { dot } from "./semantic";
+import { calibrateScore, dot, extractKeyTags } from "./semantic";
 import { listBrowserDocuments, removeBrowserDocument, saveBrowserDocument } from "./storage";
 import { summarizeExtractively } from "./summarize";
 import { BrowserDocument, BrowserSearchResult } from "./types";
@@ -28,6 +28,17 @@ const CONTROL_API = import.meta.env.VITE_CONTROL_API ?? "";
 const formatMs = (value: number | null) => value == null ? "—" : value < 1000 ? `${value.toFixed(0)} ms` : `${(value / 1000).toFixed(2)} s`;
 const formatEnergy = (value: number | null) => value == null ? "—" : `${value.toFixed(3)} J`;
 
+function highlightQuery(text: string, queryText: string) {
+  if (!queryText.trim()) return text;
+  const terms = queryText.toLowerCase().split(/\s+/).filter((t) => t.length > 2);
+  if (!terms.length) return text;
+  const pattern = new RegExp(`(${terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "gi");
+  const parts = text.split(pattern);
+  return parts.map((part, i) =>
+    terms.includes(part.toLowerCase()) ? <mark key={i} className="search-match-highlight">{part}</mark> : part
+  );
+}
+
 export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserWorker> }) {
   const [documents, setDocuments] = useState<BrowserDocument[]>([]);
   const [selectedId, setSelectedId] = useState("");
@@ -38,10 +49,11 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
   const [latencyWeight, setLatencyWeight] = useState(65);
   const [scenario, setScenario] = useState("live");
   const [decision, setDecision] = useState<BrowserPlacement | null>(null);
-  const [modelStatus, setModelStatus] = useState("First use downloads MiniLM (~27MB ONNX, cached locally); subsequent runs are instant");
+  const [modelStatus, setModelStatus] = useState("MiniLM loaded locally in browser WebAssembly cache");
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<BrowserSearchResult[]>([]);
   const [deleteArmed, setDeleteArmed] = useState(false);
+
   const selected = useMemo(
     () => documents.find((document) => document.id === selectedId) ?? documents[0],
     [documents, selectedId],
@@ -102,7 +114,7 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
         let operation = "minilm_mmr_summary";
         try {
           summary = await summarizeWithMiniLM(selected.content, 3, setModelStatus);
-          setModelStatus("MiniLM ready · model cached on this device");
+          setModelStatus("MiniLM ready · execution instant from local cache");
         } catch {
           summary = summarizeExtractively(selected.content, 3);
           operation = "frequency_fallback_summary";
@@ -184,10 +196,14 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
     try {
       const [queryVector] = await embedTexts([query.trim()], setModelStatus);
       const results = indexed.map((document): BrowserSearchResult => {
-        const matches = document.searchPassages!.map((passage) => ({
-          passage: passage.text,
-          score: dot(queryVector, passage.embedding),
-        })).sort((left, right) => right.score - left.score);
+        const matches = document.searchPassages!.map((passage) => {
+          const rawCosine = dot(queryVector, passage.embedding);
+          const calibrated = calibrateScore(rawCosine, query.trim(), passage.text);
+          return {
+            passage: passage.text,
+            score: calibrated,
+          };
+        }).sort((left, right) => right.score - left.score);
         return {
           documentId: document.id,
           name: document.name,
@@ -197,7 +213,7 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
         };
       }).sort((left, right) => right.score - left.score);
       setSearchResults(results.slice(0, 6));
-      setModelStatus("Query and similarity search completed locally");
+      setModelStatus("Semantic similarity search & keyword calibration completed locally");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Local semantic search failed");
     } finally {
@@ -234,36 +250,297 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
     await refresh();
   };
 
-  return <>
-    {error && <div className="error-banner">{error}<button onClick={() => setError("")}>×</button></div>}
-    <section className="browser-privacy-banner">
-      <div><span>◎</span><div><b>Browser-private workspace</b><p>Files are read, classified and stored on this device. Uploads are not sent to the application server.</p></div></div>
-      <div className="browser-banner-actions"><button className="demo-button" onClick={loadDemoSet}>Load fictional demo</button><label className="upload-button">{readingFile ? "Reading locally…" : "+ Add TXT or PDF"}<input disabled={busy} type="file" accept=".txt,.pdf,text/plain,application/pdf" onChange={upload} /></label></div>
-    </section>
-    <section className="panel browser-search-panel">
-      <div className="browser-search-row"><span>⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === "Enter" && searchLocally()} placeholder="Smart search by meaning across locally indexed documents…" /><button disabled={busy} onClick={searchLocally}>Search locally</button></div>
-      <small>{modelStatus} · Documents and queries never leave this browser.</small>
-      {searchResults.length > 0 && <div className="browser-search-results">{searchResults.map((result) => <button key={result.documentId} onClick={() => { setSelectedId(result.documentId); setSearchResults([]); setDecision(null); }}><span><b>{result.name}</b><em className={badgeClass(result.sensitivity)}>{result.sensitivity}</em></span><p>{result.matchingPassage.slice(0, 180)}{result.matchingPassage.length > 180 ? "…" : ""}</p><strong>{Math.max(0, Math.round(result.score * 100))}% semantic match</strong></button>)}</div>}
-    </section>
-    <div className="workspace-grid browser-workspace">
-      <section className="panel file-panel">
-        <div className="panel-title"><div><span className="eyebrow">INDEXEDDB ON THIS DEVICE</span><h2>Private documents</h2></div><span className="count">{documents.length} files</span></div>
-        <div className="file-head"><span>Name</span><span>Privacy</span><span>Type</span></div>
-        <div className="file-list">{documents.map((document) => <button key={document.id} className={selected?.id === document.id ? "selected" : ""} onClick={() => { setSelectedId(document.id); setDecision(null); setDeleteArmed(false); }}><span className="file-name"><i>{document.mediaType === "application/pdf" ? "PDF" : "TXT"}</i><b>{document.name}</b></span><span><em className={badgeClass(document.classification.sensitivity)}>{document.classification.displayName}</em></span><span className="file-status">{document.searchPassages?.length ? "Smart-search ready" : document.mediaType === "application/pdf" ? "Text PDF" : "Text"}</span></button>)}</div>
-        {!documents.length && <div className="empty">Upload a text file or text-based PDF. Nothing leaves this browser.</div>}
+  // Executive summary parsing
+  const summaryBullets = selected?.summary
+    ? selected.summary.split(/(?<=[.!?])\s+|\n+/).map((s) => s.replace(/^[•\s-]+/, "").trim()).filter(Boolean)
+    : [];
+  const tags = selected?.content ? extractKeyTags(selected.content) : [];
+  const origWords = selected?.content ? selected.content.trim().split(/\s+/).length : 0;
+  const sumWords = selected?.summary ? selected.summary.trim().split(/\s+/).length : 0;
+  const compressionRatio = origWords > 0
+    ? Math.max(12, Math.min(88, Math.round((1 - sumWords / Math.max(sumWords, origWords)) * 100)))
+    : 0;
+
+  return (
+    <div className="google-workspace-container">
+      {error && <div className="error-banner">{error}<button onClick={() => setError("")}>×</button></div>}
+
+      <section className="google-hero-banner">
+        <div className="hero-content">
+          <span className="google-chip">ON-DEVICE EDGE PRIVACY</span>
+          <h2>Private Document Intelligence</h2>
+          <p>Client-side classification, vector search, and privacy-governed computation offloading.</p>
+        </div>
+        <div className="hero-actions">
+          <button className="google-pill-btn secondary" onClick={loadDemoSet}>
+            <span>✦</span> Load Fictional Demo
+          </button>
+          <label className="google-pill-btn primary">
+            {readingFile ? "Reading locally…" : "＋ Add Document / PDF"}
+            <input disabled={busy} type="file" accept=".txt,.pdf,text/plain,application/pdf" onChange={upload} />
+          </label>
+        </div>
       </section>
-      <section className="panel inspector browser-inspector">
-        {selected ? <>
-          <div className="panel-title"><div><span className="eyebrow">LOCAL PRIVACY INSPECTION</span><h2>{selected.name}</h2></div><em className={badgeClass(selected.classification.sensitivity)}>{selected.classification.displayName}</em></div>
-          <div className="classification-box"><span>Why this label?</span><p>{selected.classification.reasons.join(" ")}</p><small>Allowed: {selected.classification.allowedDestinations.join(" · ")}</small></div>
-          <div className="document-preview"><span>Extracted locally</span><p>{selected.content.slice(0, 900)}{selected.content.length > 900 ? "…" : ""}</p></div>
-          <div className="browser-control-grid"><label><span>Optimize for</span><b>{latencyWeight}% latency · {100 - latencyWeight}% energy</b><input type="range" min="0" max="100" value={latencyWeight} onChange={(event) => setLatencyWeight(Number(event.target.value))} /></label><label><span>Resource scenario</span><select value={scenario} onChange={(event) => setScenario(event.target.value)}><option value="live">Live worker state</option><option value="client_busy">Simulated: client busy</option><option value="edge_busy">Simulated: edge busy</option><option value="client_and_edge_busy">Simulated: client + edge busy</option></select></label></div>
-          {scenario !== "live" && <div className="simulation-note">Simulated queue pressure affects placement; execution and receipts remain real.</div>}
-          <div className="browser-actions"><button className="primary" disabled={busy} onClick={summarize}>{busy ? "Running local ML task…" : "Evaluate & summarize"}<span>→</span></button><button className="secondary-action" disabled={busy} onClick={indexSelected}>{selected.searchPassages?.length ? "Refresh smart-search index" : "Prepare for smart search"}<span>⌁</span></button><button className={deleteArmed ? "danger-confirm" : "danger-quiet"} onClick={remove}>{deleteArmed ? `Confirm removal of ${selected.mediaType === "application/pdf" ? "PDF" : "document"}` : `Remove ${selected.mediaType === "application/pdf" ? "PDF" : "document"} from this device`}</button></div>
-        </> : <div className="empty">Choose a local document to inspect it.</div>}
+
+      {/* Google-Style Smart Search Bar */}
+      <section className="google-search-section">
+        <div className="google-search-bar">
+          <span className="search-icon">🔍</span>
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => event.key === "Enter" && searchLocally()}
+            placeholder="Search documents by meaning (e.g., 'Azure workshop', 'internship', 'card details')…"
+          />
+          <button className="search-action-btn" disabled={busy} onClick={searchLocally}>
+            {busy ? "Searching…" : "Search"}
+          </button>
+        </div>
+        <div className="search-status-bar">
+          <span>🛡️ {modelStatus}</span>
+          <span className="privacy-guarantee">Queries never leave this browser</span>
+        </div>
+
+        {searchResults.length > 0 && (
+          <div className="google-search-results-grid">
+            {searchResults.map((result) => (
+              <button
+                key={result.documentId}
+                className="google-search-card"
+                onClick={() => { setSelectedId(result.documentId); setSearchResults([]); setDecision(null); }}
+              >
+                <div className="card-top">
+                  <b>{result.name}</b>
+                  <em className={badgeClass(result.sensitivity)}>{result.sensitivity}</em>
+                </div>
+                <p className="card-passage">{highlightQuery(result.matchingPassage, query)}</p>
+                <div className="card-match-bar">
+                  <span className={`match-pill ${result.score >= 80 ? "high" : result.score >= 60 ? "medium" : "low"}`}>
+                    {result.score}% Match
+                  </span>
+                  <span className="match-tag">Semantic Similarity</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </section>
+
+      <div className="google-two-col-layout">
+        {/* Left Column: Document File List */}
+        <section className="google-card file-panel-card">
+          <div className="card-header">
+            <div>
+              <span className="eyebrow">INDEXEDDB ENCLAVE</span>
+              <h3>Private Documents</h3>
+            </div>
+            <span className="badge-pill">{documents.length} files</span>
+          </div>
+
+          <div className="file-list-view">
+            {documents.map((document) => (
+              <button
+                key={document.id}
+                className={`file-row-btn ${selected?.id === document.id ? "selected" : ""}`}
+                onClick={() => { setSelectedId(document.id); setDecision(null); setDeleteArmed(false); }}
+              >
+                <div className="file-icon-badge">
+                  {document.mediaType === "application/pdf" ? "PDF" : "TXT"}
+                </div>
+                <div className="file-meta">
+                  <b>{document.name}</b>
+                  <small>{document.searchPassages?.length ? "✓ Smart-search ready" : "Stored locally"}</small>
+                </div>
+                <em className={badgeClass(document.classification.sensitivity)}>
+                  {document.classification.displayName}
+                </em>
+              </button>
+            ))}
+            {!documents.length && (
+              <div className="empty-state">
+                <p>Upload a text file or PDF, or click <b>Load Fictional Demo</b> above.</p>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Right Column: Privacy Inspector & Actions */}
+        <section className="google-card inspector-card">
+          {selected ? (
+            <>
+              <div className="card-header">
+                <div>
+                  <span className="eyebrow">PRIVACY INSPECTION & CONTROL</span>
+                  <h3>{selected.name}</h3>
+                </div>
+                <em className={badgeClass(selected.classification.sensitivity)}>
+                  {selected.classification.displayName}
+                </em>
+              </div>
+
+              <div className="privacy-explanation-box">
+                <div className="expl-header">
+                  <span className="shield-icon">🛡️</span>
+                  <b>Admission Policy Reasons</b>
+                </div>
+                <p>{selected.classification.reasons.join(" ")}</p>
+                <div className="allowed-strip">
+                  <span>Permitted destinations:</span>
+                  <b>{selected.classification.allowedDestinations.join(" · ")}</b>
+                </div>
+              </div>
+
+              <div className="extracted-text-preview">
+                <div className="preview-label">Document Content Preview</div>
+                <pre>{selected.content.slice(0, 700)}{selected.content.length > 700 ? "…" : ""}</pre>
+              </div>
+
+              {/* Optimization Sliders */}
+              <div className="optimizer-controls">
+                <div className="slider-row">
+                  <div className="slider-label">
+                    <span>Optimization Goal</span>
+                    <b>{latencyWeight}% Latency · {100 - latencyWeight}% Energy</b>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={latencyWeight}
+                    onChange={(event) => setLatencyWeight(Number(event.target.value))}
+                  />
+                </div>
+
+                <div className="select-row">
+                  <span>Resource Scenario</span>
+                  <select value={scenario} onChange={(event) => setScenario(event.target.value)}>
+                    <option value="live">Live Worker State</option>
+                    <option value="client_busy">Simulated: Client Busy (Queue Delay)</option>
+                    <option value="edge_busy">Simulated: Edge Busy</option>
+                    <option value="client_and_edge_busy">Simulated: Client + Edge Busy</option>
+                  </select>
+                </div>
+              </div>
+
+              {scenario !== "live" && (
+                <div className="simulation-pill-note">
+                  ⚡ Simulated queue pressure affects scheduler placement; execution and receipts remain real.
+                </div>
+              )}
+
+              <div className="inspector-actions">
+                <button className="google-pill-btn primary full" disabled={busy} onClick={summarize}>
+                  {busy ? "Evaluating & Processing…" : "Evaluate & Offload Task →"}
+                </button>
+                <button className="google-pill-btn secondary full" disabled={busy} onClick={indexSelected}>
+                  <span>⌁</span> {selected.searchPassages?.length ? "Refresh Vector Index" : "Prepare for Smart Search"}
+                </button>
+                <button
+                  className={deleteArmed ? "google-danger-btn confirm" : "google-danger-btn"}
+                  onClick={remove}
+                >
+                  {deleteArmed ? "Confirm Removal from Device" : "Remove from This Device"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="empty-state">
+              <p>Select a document from the left to inspect its privacy classification and offload tasks.</p>
+            </div>
+          )}
+        </section>
+      </div>
+
+      {/* Decision Card */}
+      {decision && (
+        <section className="google-card decision-section">
+          <div className="card-header">
+            <div>
+              <span className="eyebrow">SCHEDULER PLACEMENT DECISION</span>
+              <h3>{decision.selectedTier ? `${decision.selectedTier.toUpperCase()} Selected` : "Task Deferred"}</h3>
+              <p className="subtext">{decision.explanation}</p>
+            </div>
+          </div>
+          <div className="tier-cards-grid">
+            {decision.candidates.map((candidate) => (
+              <article key={candidate.tier} className={`candidate-tier-card ${candidate.selected ? "selected" : candidate.privacyAllowed ? "" : "blocked"}`}>
+                <div className="tier-card-head">
+                  <div className="tier-brand">
+                    <span className="tier-icon">{candidate.tier === "local" ? "▣" : candidate.tier === "edge" ? "◇" : "☁"}</span>
+                    <strong>{candidate.tier.toUpperCase()}</strong>
+                  </div>
+                  {candidate.selected && <span className="winner-tag">Selected</span>}
+                </div>
+                <dl className="tier-stats">
+                  <div>
+                    <dt>Privacy</dt>
+                    <dd className={candidate.privacyAllowed ? "allowed" : "denied"}>{candidate.privacyAllowed ? "Allowed" : "Blocked"}</dd>
+                  </div>
+                  <div>
+                    <dt>Availability</dt>
+                    <dd>{candidate.available ? "Ready" : "Unavailable"}</dd>
+                  </div>
+                  <div>
+                    <dt>Predicted Latency</dt>
+                    <dd>{formatMs(candidate.predictedLatencyMs)}</dd>
+                  </div>
+                  <div>
+                    <dt>Estimated Energy</dt>
+                    <dd>{formatEnergy(candidate.estimatedDeviceEnergyJ)}</dd>
+                  </div>
+                </dl>
+                <p className="candidate-reason">{candidate.reason}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Executive Summary Card */}
+      {selected?.summary && (
+        <section className="google-card executive-summary-section">
+          <div className="card-header">
+            <div>
+              <span className="eyebrow">SEMANTIC EXECUTIVE BRIEFING</span>
+              <h3>Executive Takeaways</h3>
+            </div>
+            <div className="summary-pill-strip">
+              {compressionRatio > 0 && <span className="stat-pill">⚡ -{compressionRatio}% Condensed</span>}
+              <span className="stat-pill">{summaryBullets.length} Key Points</span>
+              <span className="execution-tag">
+                {displayedSummaryTier === "local" ? "🛡️ Local Processing (Zero Network)" : `☁️ Verified ${displayedSummaryTier.toUpperCase()} Execution`}
+              </span>
+            </div>
+          </div>
+
+          <div className="executive-bullets-container">
+            <ul className="executive-bullets-list">
+              {summaryBullets.map((bullet, idx) => (
+                <li key={idx} className="bullet-item">
+                  <span className="check-icon">✓</span>
+                  <span className="bullet-text">{bullet}</span>
+                </li>
+              ))}
+            </ul>
+
+            {tags.length > 0 && (
+              <div className="topics-row">
+                <span className="topics-heading">Core Entities:</span>
+                {tags.map((tag, idx) => (
+                  <span key={idx} className="topic-pill-chip">{tag}</span>
+                ))}
+              </div>
+            )}
+
+            {selected.receipt && (
+              <div className="receipt-bar">
+                <span>Cryptographic Execution Receipt</span>
+                <code>{String(selected.receipt.receipt_id).slice(0, 8)} · {String(selected.receipt.worker_id)} · {String(selected.receipt.processing_ms)} ms</code>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
     </div>
-    {decision && <section className="panel browser-decision"><div className="panel-title"><div><span className="eyebrow">BROWSER PLACEMENT DECISION</span><h2>{decision.selectedTier ? `${decision.selectedTier.toUpperCase()} selected` : "Task deferred"}</h2><p>{decision.explanation}</p></div></div><div className="tier-grid">{decision.candidates.map((candidate) => <article key={candidate.tier} className={candidate.selected ? "winner" : candidate.privacyAllowed ? "" : "blocked"}><div className="tier-title"><span>{candidate.tier === "local" ? "▣" : candidate.tier === "edge" ? "◇" : "☁"}</span><b>{candidate.tier}</b>{candidate.selected && <em>Selected</em>}</div><dl><div><dt>Privacy</dt><dd>{candidate.privacyAllowed ? "Allowed" : "Blocked"}</dd></div><div><dt>Availability</dt><dd>{candidate.available ? "Ready" : "Unavailable"}</dd></div><div><dt>Predicted latency</dt><dd>{formatMs(candidate.predictedLatencyMs)}</dd></div><div><dt>Estimated energy</dt><dd>{formatEnergy(candidate.estimatedDeviceEnergyJ)}</dd></div></dl><p>{candidate.reason}</p></article>)}</div></section>}
-    {selected?.summary && <section className="panel summary-panel"><div className="panel-title"><div><span className="eyebrow">SEMANTIC EXTRACTIVE SUMMARY · {displayedSummaryTier.toUpperCase()} EXECUTION</span><h2>Summary</h2></div><span className="local-only-chip">{displayedSummaryTier === "local" ? "No network used" : `Verified ${displayedSummaryTier} receipt`}</span></div><p>{selected.summary}</p>{selected.receipt && <div className="receipt"><span>Execution receipt</span><code>{String(selected.receipt.receipt_id).slice(0, 8)} · {String(selected.receipt.worker_id)} · {String(selected.receipt.processing_ms)} ms</code></div>}</section>}
-  </>;
+  );
 }

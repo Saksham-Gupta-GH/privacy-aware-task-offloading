@@ -116,8 +116,6 @@ function App() {
     }
   };
 
-  // A Vercel deployment can operate fully in browser-private mode without the
-  // optional Python control plane. Local development still discovers all workers.
   useEffect(() => { refresh().catch(() => undefined); }, []);
 
   const upload = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -171,81 +169,275 @@ function App() {
       setExperiments(value.results);
       setExperimentMode(value.mode);
     } catch {
-      // Fall back to calibrated benchmark simulation
       setExperiments(DEFAULT_EXPERIMENTS);
       setExperimentMode("Calibrated simulation benchmark");
     }
   };
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand"><div className="brand-mark">P</div><div><strong>PrivacyDrive</strong><span>Edge-aware workspace</span></div></div>
-        <nav>
-          <button className={tab === "browser" ? "active" : ""} onClick={() => setTab("browser")}><span>◉</span> Private workspace</button>
-          <button className={tab === "workspace" ? "active" : ""} onClick={() => setTab("workspace")}><span>▦</span> Distributed demo</button>
-          <button className={tab === "experiments" ? "active" : ""} onClick={openExperiments}><span>⌁</span> Experiments</button>
-        </nav>
-        <div className="sidebar-spacer" />
-        <div className="policy-card">
-          <span className="eyebrow">Active policy</span>
-          <strong>privacy-policy-v1</strong>
-          <p>Classification happens locally before transmission.</p>
-        </div>
-      </aside>
+    <div className="google-app-shell">
+      {/* Top Google-style Navigation Bar */}
+      <header className="google-nav-header">
+        <div className="nav-inner">
+          <div className="brand-block">
+            <span className="brand-dot">◉</span>
+            <strong className="brand-name">PrivacyDrive</strong>
+            <span className="brand-tag">MEC Research</span>
+          </div>
 
-      <main>
-        <header className="topbar">
-          <div><span className="eyebrow">MOBILE EDGE COMPUTING</span><h1>{tab === "browser" ? "Private document workspace" : tab === "workspace" ? "Distributed offloading demo" : "Research evidence"}</h1></div>
-          <div className="worker-strip">
+          <nav className="nav-tabs-row">
+            <button className={`nav-tab ${tab === "browser" ? "active" : ""}`} onClick={() => setTab("browser")}>
+              <span className="tab-icon">◉</span> Private Workspace
+            </button>
+            <button className={`nav-tab ${tab === "workspace" ? "active" : ""}`} onClick={() => setTab("workspace")}>
+              <span className="tab-icon">▦</span> Distributed Demo
+            </button>
+            <button className={`nav-tab ${tab === "experiments" ? "active" : ""}`} onClick={openExperiments}>
+              <span className="tab-icon">⌁</span> Experiments
+            </button>
+            <a
+              href="https://github.com/Saksham-Gupta-GH/privacy-aware-task-offloading/blob/main/docs/PAPER_DRAFT.md"
+              target="_blank"
+              rel="noreferrer"
+              className="paper-pill-link"
+            >
+              Paper ↗
+            </a>
+          </nav>
+
+          <div className="worker-status-pills">
             {["local", "edge", "cloud"].map((tier) => {
-              const worker = workers[tier]; const online = worker?.available && worker?.ready;
-              return <div className="mini-status" key={tier}><i className={online ? "online" : "offline"} /><span>{tier}</span><b>{online ? "Ready" : "Offline"}</b></div>;
+              const worker = workers[tier];
+              const online = worker?.available && worker?.ready;
+              return (
+                <div className={`status-pill ${online ? "online" : "offline"}`} key={tier} title={worker?.detail || ""}>
+                  <i className={`beacon-dot ${online ? "pulse" : ""}`} />
+                  <span className="tier-label">{tier}</span>
+                  <b className="state-label">{online ? "Ready" : "Offline"}</b>
+                </div>
+              );
             })}
           </div>
-        </header>
+        </div>
+      </header>
 
+      <main className="google-main">
         {error && <div className="error-banner">{error}<button onClick={() => setError("")}>×</button></div>}
 
-        {tab === "browser" ? <BrowserWorkspace workers={workers} /> : tab === "workspace" ? <>
-          <section className="toolbar">
-            <div className="search-box"><span>⌕</span><input value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && search()} placeholder="Search your processed documents by meaning…" /><button onClick={search}>Search locally</button></div>
-            <label className="upload-button">＋ Add text file<input type="file" accept=".txt,text/plain" onChange={upload} /></label>
-          </section>
-
-          {searchResults.length > 0 && <section className="search-results panel"><div className="panel-title"><div><span className="eyebrow">LOCAL SEMANTIC SEARCH</span><h2>Best matches</h2></div><button className="quiet" onClick={() => setSearchResults([])}>Close</button></div><div className="result-grid">{searchResults.map((item) => <button key={item.id} onClick={() => { setSelectedId(item.id); setSearchResults([]); }}><b>{item.name}</b><span>{item.matching_passage}</span><em>{Math.round(item.score * 100)}% match</em></button>)}</div></section>}
-
-          <div className="workspace-grid">
-            <section className="panel file-panel">
-              <div className="panel-title"><div><span className="eyebrow">LOCAL WORKSPACE</span><h2>Documents</h2></div><span className="count">{documents.length} files</span></div>
-              <div className="file-head"><span>Name</span><span>Privacy</span><span>Status</span></div>
-              <div className="file-list">{documents.map((document) => <button key={document.id} className={selected?.id === document.id ? "selected" : ""} onClick={() => { setSelectedId(document.id); setResult(null); }}><span className="file-name"><i>TXT</i><b>{document.name}</b></span><span><em className={badgeClass(document.sensitivity)}>{document.sensitivity}</em></span><span className="file-status">{document.processed ? `Indexed · ${document.selected_tier}` : "Not processed"}</span></button>)}</div>
+        {tab === "browser" ? (
+          <BrowserWorkspace workers={workers} />
+        ) : tab === "workspace" ? (
+          <div className="workspace-view">
+            <section className="google-search-section">
+              <div className="google-search-bar">
+                <span className="search-icon">🔍</span>
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && search()}
+                  placeholder="Search processed documents by meaning…"
+                />
+                <button className="search-action-btn" onClick={search}>Search locally</button>
+              </div>
             </section>
 
-            <section className="panel inspector">
-              {selected ? <>
-                <div className="panel-title"><div><span className="eyebrow">PRIVACY INSPECTOR</span><h2>{selected.name}</h2></div><em className={badgeClass(selected.sensitivity)}>{selected.classification.display_name}</em></div>
-                <div className="classification-box"><span>Classification reason</span><p>{selected.classification.reasons.join(" ")}</p><small>Allowed: {selected.classification.allowed_destinations.join(" · ")}</small></div>
-                <div className="control-grid">
-                  <label><span>Optimize for</span><b>{latencyWeight}% latency · {100 - latencyWeight}% energy</b><input type="range" min="0" max="100" value={latencyWeight} onChange={(e) => setLatencyWeight(Number(e.target.value))} /></label>
-                  <label><span>Resource scenario</span><select value={scenario} onChange={(e) => setScenario(e.target.value)}><option value="live">Live worker state</option><option value="client_busy">Simulated: client busy</option><option value="edge_busy">Simulated: edge busy</option><option value="client_and_edge_busy">Simulated: client + edge busy</option></select></label>
-                  <label><span>Processing demand</span><select value={workload} onChange={(e) => setWorkload(e.target.value)}><option value="actual">Actual document</option><option value="demo_medium">Simulated medium · 32 passages</option><option value="demo_heavy">Simulated heavy · 128 passages</option></select></label>
-                  <label><span>Deadline (optional)</span><input className="text-input" value={deadline} onChange={(e) => setDeadline(e.target.value)} placeholder="milliseconds" /></label>
+            {searchResults.length > 0 && (
+              <section className="google-search-results-grid">
+                {searchResults.map((item) => (
+                  <button key={item.id} className="google-search-card" onClick={() => { setSelectedId(item.id); setSearchResults([]); }}>
+                    <div className="card-top">
+                      <b>{item.name}</b>
+                      <em>{Math.round(item.score * 100)}% match</em>
+                    </div>
+                    <p className="card-passage">{item.matching_passage}</p>
+                  </button>
+                ))}
+              </section>
+            )}
+
+            <div className="google-two-col-layout">
+              <section className="google-card file-panel-card">
+                <div className="card-header">
+                  <div>
+                    <span className="eyebrow">LOCAL REPOSITORY</span>
+                    <h3>Documents</h3>
+                  </div>
+                  <span className="badge-pill">{documents.length} files</span>
                 </div>
-                {(scenario !== "live" || workload !== "actual") && <div className="simulation-note">Simulation controls are active and will be recorded with the task.</div>}
-                <button className="primary" disabled={busy} onClick={process}>{busy ? "Evaluating and processing…" : "Prepare for smart search"}<span>→</span></button>
-              </> : <div className="empty">Select a document</div>}
+                <div className="file-list-view">
+                  {documents.map((document) => (
+                    <button
+                      key={document.id}
+                      className={`file-row-btn ${selected?.id === document.id ? "selected" : ""}`}
+                      onClick={() => { setSelectedId(document.id); setResult(null); }}
+                    >
+                      <div className="file-icon-badge">TXT</div>
+                      <div className="file-meta">
+                        <b>{document.name}</b>
+                        <small>{document.processed ? `Indexed · ${document.selected_tier}` : "Not processed"}</small>
+                      </div>
+                      <em className={badgeClass(document.sensitivity)}>{document.sensitivity}</em>
+                    </button>
+                  ))}
+                </div>
+                <div className="card-footer-action">
+                  <label className="google-pill-btn primary full">
+                    ＋ Add Text File
+                    <input type="file" accept=".txt,text/plain" onChange={upload} style={{ display: "none" }} />
+                  </label>
+                </div>
+              </section>
+
+              <section className="google-card inspector-card">
+                {selected ? (
+                  <>
+                    <div className="card-header">
+                      <div>
+                        <span className="eyebrow">PRIVACY INSPECTION</span>
+                        <h3>{selected.name}</h3>
+                      </div>
+                      <em className={badgeClass(selected.sensitivity)}>{selected.classification.display_name}</em>
+                    </div>
+                    <div className="privacy-explanation-box">
+                      <div className="expl-header">
+                        <span className="shield-icon">🛡️</span>
+                        <b>Classification Reason</b>
+                      </div>
+                      <p>{selected.classification.reasons.join(" ")}</p>
+                      <div className="allowed-strip">
+                        <span>Allowed:</span>
+                        <b>{selected.classification.allowed_destinations.join(" · ")}</b>
+                      </div>
+                    </div>
+
+                    <div className="optimizer-controls">
+                      <div className="slider-row">
+                        <div className="slider-label">
+                          <span>Optimization Goal</span>
+                          <b>{latencyWeight}% Latency · {100 - latencyWeight}% Energy</b>
+                        </div>
+                        <input type="range" min="0" max="100" value={latencyWeight} onChange={(e) => setLatencyWeight(Number(e.target.value))} />
+                      </div>
+                      <div className="select-row">
+                        <span>Resource Scenario</span>
+                        <select value={scenario} onChange={(e) => setScenario(e.target.value)}>
+                          <option value="live">Live Worker State</option>
+                          <option value="client_busy">Simulated: Client Busy</option>
+                          <option value="edge_busy">Simulated: Edge Busy</option>
+                          <option value="client_and_edge_busy">Simulated: Client + Edge Busy</option>
+                        </select>
+                      </div>
+                      <div className="select-row">
+                        <span>Processing Demand</span>
+                        <select value={workload} onChange={(e) => setWorkload(e.target.value)}>
+                          <option value="actual">Actual Document</option>
+                          <option value="demo_medium">Simulated Medium · 32 Passages</option>
+                          <option value="demo_heavy">Simulated Heavy · 128 Passages</option>
+                        </select>
+                      </div>
+                      <div className="select-row">
+                        <span>Deadline (Optional)</span>
+                        <input className="text-input" value={deadline} onChange={(e) => setDeadline(e.target.value)} placeholder="Milliseconds" />
+                      </div>
+                    </div>
+
+                    {(scenario !== "live" || workload !== "actual") && (
+                      <div className="simulation-pill-note">
+                        Simulation controls are active and will be recorded with the task receipt.
+                      </div>
+                    )}
+
+                    <div className="inspector-actions">
+                      <button className="google-pill-btn primary full" disabled={busy} onClick={process}>
+                        {busy ? "Evaluating and processing…" : "Prepare for Smart Search →"}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="empty-state">Select a document</div>
+                )}
+              </section>
+            </div>
+
+            {result && (
+              <section className="google-card decision-section">
+                <div className="card-header">
+                  <div>
+                    <span className="eyebrow">WHY HERE?</span>
+                    <h3>{result.decision.selected_tier ? `${result.decision.selected_tier.toUpperCase()} Selected` : "Task Deferred"}</h3>
+                    <p className="subtext">{result.decision.explanation}</p>
+                  </div>
+                  {result.actual_latency_ms != null && (
+                    <div className="actual-metric-pill">
+                      <span>Measured End-to-End</span>
+                      <b>{fmtMs(result.actual_latency_ms)}</b>
+                    </div>
+                  )}
+                </div>
+                <div className="tier-cards-grid">
+                  {result.decision.candidates.map((candidate) => (
+                    <article key={candidate.tier} className={`candidate-tier-card ${candidate.selected ? "selected" : candidate.privacy_allowed ? "" : "blocked"}`}>
+                      <div className="tier-card-head">
+                        <div className="tier-brand">
+                          <span className="tier-icon">{candidate.tier === "local" ? "▣" : candidate.tier === "edge" ? "◇" : "☁"}</span>
+                          <strong>{candidate.tier.toUpperCase()}</strong>
+                        </div>
+                        {candidate.selected && <span className="winner-tag">Selected</span>}
+                      </div>
+                      <dl className="tier-stats">
+                        <div>
+                          <dt>Privacy</dt>
+                          <dd className={candidate.privacy_allowed ? "allowed" : "denied"}>{candidate.privacy_allowed ? "Allowed" : "Blocked"}</dd>
+                        </div>
+                        <div>
+                          <dt>Availability</dt>
+                          <dd>{candidate.available ? "Ready" : "Unavailable"}</dd>
+                        </div>
+                        <div>
+                          <dt>Predicted Latency</dt>
+                          <dd>{fmtMs(candidate.predicted_latency_ms)}</dd>
+                        </div>
+                        <div>
+                          <dt>Estimated Energy</dt>
+                          <dd>{fmtEnergy(candidate.estimated_device_energy_j)}</dd>
+                        </div>
+                      </dl>
+                      <p className="candidate-reason">{candidate.reason}</p>
+                    </article>
+                  ))}
+                </div>
+                {result.receipt && (
+                  <div className="receipt-bar">
+                    <span>Verified Execution Receipt</span>
+                    <code>{String(result.receipt.receipt_id).slice(0, 8)} · {String(result.receipt.worker_id)} · {String(result.receipt.processing_ms)} ms · {result.passage_count} passage(s)</code>
+                  </div>
+                )}
+              </section>
+            )}
+
+            <section className="google-card history-card">
+              <div className="card-header">
+                <div>
+                  <span className="eyebrow">AUDIT TRAIL</span>
+                  <h3>Recent Decisions</h3>
+                </div>
+              </div>
+              <div className="history-table">
+                {history.slice(0, 6).map((item) => (
+                  <div className="history-row" key={item.id}>
+                    <span className={badgeClass(item.sensitivity)}>{item.sensitivity}</span>
+                    <b>{item.selected_tier || "deferred"}</b>
+                    <span className="scenario-tag">{item.scenario}</span>
+                    <span className="latency-val">{fmtMs(item.actual_latency_ms)}</span>
+                  </div>
+                ))}
+                {history.length === 0 && <p className="empty-subtext">No tasks processed yet.</p>}
+              </div>
             </section>
           </div>
-
-          {result && <section className="panel decision-panel">
-            <div className="panel-title"><div><span className="eyebrow">WHY HERE?</span><h2>{result.decision.selected_tier ? `${result.decision.selected_tier.toUpperCase()} selected` : "Task deferred"}</h2><p>{result.decision.explanation}</p></div>{result.actual_latency_ms != null && <div className="actual-metric"><span>Measured end-to-end</span><b>{fmtMs(result.actual_latency_ms)}</b></div>}</div>
-            <div className="tier-grid">{result.decision.candidates.map((candidate) => <article className={candidate.selected ? "winner" : candidate.privacy_allowed ? "" : "blocked"} key={candidate.tier}><div className="tier-title"><span>{candidate.tier === "local" ? "▣" : candidate.tier === "edge" ? "◇" : "☁"}</span><b>{candidate.tier}</b>{candidate.selected && <em>Selected</em>}</div><dl><div><dt>Privacy</dt><dd>{candidate.privacy_allowed ? "Allowed" : "Blocked"}</dd></div><div><dt>Availability</dt><dd>{candidate.available ? "Ready" : "Unavailable"}</dd></div><div><dt>Predicted latency</dt><dd>{fmtMs(candidate.predicted_latency_ms)}</dd></div><div><dt>Estimated device energy</dt><dd>{fmtEnergy(candidate.estimated_device_energy_j)}</dd></div></dl><p>{candidate.reason}</p></article>)}</div>
-            {result.receipt && <div className="receipt"><span>Verified execution receipt</span><code>{String(result.receipt.receipt_id).slice(0, 8)} · {String(result.receipt.worker_id)} · {String(result.receipt.processing_ms)} ms · {result.passage_count} passage(s)</code></div>}
-          </section>}
-
-          <section className="panel history-panel"><div className="panel-title"><div><span className="eyebrow">AUDIT TRAIL</span><h2>Recent decisions</h2></div></div><div className="history-list">{history.slice(0, 6).map((item) => <div key={item.id}><span className={badgeClass(item.sensitivity)}>{item.sensitivity}</span><b>{item.selected_tier || "deferred"}</b><span>{item.scenario}</span><span>{fmtMs(item.actual_latency_ms)}</span></div>)}{history.length === 0 && <p>No tasks processed yet.</p>}</div></section>
-        </> : <ExperimentView data={experiments} mode={experimentMode} />}
+        ) : (
+          <ExperimentView data={experiments} mode={experimentMode} />
+        )}
       </main>
     </div>
   );
@@ -253,13 +445,58 @@ function App() {
 
 function ExperimentView({ data, mode }: { data: any[]; mode: string }) {
   const maxLatency = Math.max(...data.map((item) => item.average_predicted_latency_ms || 0), 1);
-  return <div className="experiment-layout">
-    <section className="research-hero"><div><span className="eyebrow">{mode}</span><h2>Privacy has a measurable cost—and a clear benefit.</h2><p>Compare the proposed scheduler with baselines across the same locally classified documents.</p></div><div className="zero-card"><strong>{data.find((item) => item.method === "privacy_aware")?.policy_violations ?? 0}</strong><span>policy violations<br />with proposed method</span></div></section>
-    <section className="panel chart-panel"><div className="panel-title"><div><span className="eyebrow">BASELINE COMPARISON</span><h2>Predicted response time</h2></div><small>Lower is better · simulated</small></div><div className="bar-chart">{data.map((item) => <div className="bar-row" key={item.method}><b>{item.method.replaceAll("_", " ")}</b><div><i style={{ width: `${((item.average_predicted_latency_ms || 0) / maxLatency) * 100}%` }} /></div><span>{fmtMs(item.average_predicted_latency_ms)}</span></div>)}</div></section>
-    <div className="metric-cards">{data.map((item) => <article key={item.method}><span>{item.method.replaceAll("_", " ")}</span><b>{item.policy_violations}</b><p>policy violations across {item.tasks} tasks</p><small>{item.average_estimated_device_energy_j?.toFixed(3) ?? "—"} J estimated device energy</small></article>)}</div>
-    <section className="method-note"><b>What this proves</b><p>The proposed method filters destinations using privacy and availability before optimizing estimated latency and device energy. Policy compliance and classifier accuracy are measured separately.</p></section>
-  </div>;
+  return (
+    <div className="experiment-layout">
+      <section className="google-hero-banner">
+        <div className="hero-content">
+          <span className="google-chip">{mode}</span>
+          <h2>Privacy Has a Measurable Cost — and a Clear Benefit</h2>
+          <p>Compare the proposed scheduler with baselines across the same locally classified documents.</p>
+        </div>
+        <div className="zero-violations-badge">
+          <strong>{data.find((item) => item.method === "privacy_aware")?.policy_violations ?? 0}</strong>
+          <span>Policy Violations<br />with Proposed Method</span>
+        </div>
+      </section>
+
+      <section className="google-card chart-card">
+        <div className="card-header">
+          <div>
+            <span className="eyebrow">BASELINE BENCHMARK</span>
+            <h3>Predicted Response Time</h3>
+          </div>
+          <small className="subtext">Lower is better · Simulated</small>
+        </div>
+        <div className="bar-chart-container">
+          {data.map((item) => (
+            <div className="bar-row" key={item.method}>
+              <b className="method-label">{item.method.replaceAll("_", " ")}</b>
+              <div className="bar-track">
+                <div className="bar-fill" style={{ width: `${((item.average_predicted_latency_ms || 0) / maxLatency) * 100}%` }} />
+              </div>
+              <span className="latency-metric">{fmtMs(item.average_predicted_latency_ms)}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div className="metric-cards-grid">
+        {data.map((item) => (
+          <article className="metric-box-card" key={item.method}>
+            <span className="box-title">{item.method.replaceAll("_", " ")}</span>
+            <b className="box-violations">{item.policy_violations}</b>
+            <p className="box-sub">policy violations across {item.tasks} tasks</p>
+            <small className="box-energy">{item.average_estimated_device_energy_j?.toFixed(3) ?? "—"} J estimated device energy</small>
+          </article>
+        ))}
+      </div>
+
+      <section className="google-card note-card">
+        <b>Empirical Conclusion</b>
+        <p>The proposed method filters destinations using privacy and availability before optimizing estimated latency and device energy. Policy compliance and classifier accuracy are evaluated separately.</p>
+      </section>
+    </div>
+  );
 }
 
 export default App;
-
