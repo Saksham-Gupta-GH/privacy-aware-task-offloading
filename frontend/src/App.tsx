@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { BrowserWorkspace } from "./browser/BrowserWorkspace";
-import { IconBrandLogo, IconCloud, IconGitHub } from "./components/Icons";
+import { IconBrandLogo, IconGitHub } from "./components/Icons";
 
 type Worker = { tier: string; available: boolean; ready: boolean; queue_depth: number; detail: string };
 
@@ -37,8 +37,6 @@ function App() {
     refreshWorkers().catch(() => undefined);
   }, []);
 
-  const cloudOnline = workers.cloud?.available && workers.cloud?.ready;
-
   return (
     <div className="google-app-shell">
       {/* MoveInSync-Style Clean Header */}
@@ -53,16 +51,6 @@ function App() {
           </div>
 
           <div className="header-right-group">
-            <div className="stream-live-pill">
-              <span className="live-dot" />
-              <span>Stream Live</span>
-            </div>
-
-            <div className={`cloud-pill-badge ${cloudOnline ? "online" : "offline"}`} title={workers.cloud?.detail || "Azure Cloud VM"}>
-              <IconCloud size={14} />
-              <span>Azure Cloud VM</span>
-            </div>
-
             <a
               href="https://github.com/Saksham-Gupta-GH/privacy-aware-task-offloading"
               target="_blank"
