@@ -1,0 +1,412 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{balance}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  citecolor=blue,
+  urlcolor=blue
+}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{PrivacyDrive: A Privacy-Aware Task Offloading Framework\\
+for Mobile Edge Computing}
+
+\author{
+  \IEEEauthorblockN{Saksham Gupta}
+  \IEEEauthorblockA{\textit{Department of Computer Science and Engineering} \\
+  \textit{Thapar Institute of Engineering and Technology} \\
+  Patiala, India \\
+  saksham.gupta@thapar.edu}
+  \and
+  \IEEEauthorblockN{Devesh Gautam}
+  \IEEEauthorblockA{\textit{Department of Computer Science and Engineering} \\
+  \textit{Thapar Institute of Engineering and Technology} \\
+  Patiala, India \\
+  devesh.gautam@thapar.edu}
+  \and
+  \IEEEauthorblockN{Ridhima Verma}
+  \IEEEauthorblockA{\textit{Department of Computer Science and Engineering} \\
+  \textit{Thapar Institute of Engineering and Technology} \\
+  Patiala, India \\
+  ridhima.verma@thapar.edu}
+  \and
+  \IEEEauthorblockN{Mohammad Hamza Alam}
+  \IEEEauthorblockA{\textit{Department of Computer Science and Engineering} \\
+  \textit{Thapar Institute of Engineering and Technology} \\
+  Patiala, India \\
+  mohammad.alam@thapar.edu}
+}
+
+\maketitle
+
+%% ─── ABSTRACT ────────────────────────────────────────────────────────────────
+\begin{abstract}
+Mobile Edge Computing (MEC) lets resource-limited devices offload computation to nearby edge servers or distant cloud infrastructure. But most offloading schedulers treat privacy as a soft cost term or ignore it entirely. This creates real risks: sensitive documents can end up on untrusted remote servers whenever network conditions look favorable.
+
+In this paper, we present \textbf{PrivacyDrive}, a three-tier task offloading system that treats privacy as a hard, non-negotiable constraint. Before any optimization runs, PrivacyDrive first checks whether the destination is permitted for the document's sensitivity level. Only then does it minimize a weighted cost over latency, device energy, worker availability, and execution deadlines.
+
+We deployed the system across an Apple M1 laptop (client), an AMD Ryzen 5 laptop (trusted edge), and an Azure cloud VM (public cloud). The privacy classifier achieved 100\% policy compliance with zero violations across all test cases. In contrast, the standard always-cloud and latency-only baselines produced three and two policy violations, respectively, across five tasks. Our results show that hard privacy enforcement and efficient task scheduling can coexist in a real, heterogeneous edge computing system.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Mobile Edge Computing, Task Offloading, Privacy Classification, Multi-Objective Optimization, In-Browser Inference, Semantic Summarization
+\end{IEEEkeywords}
+
+%% ─── 1. INTRODUCTION ─────────────────────────────────────────────────────────
+\section{Introduction}
+
+Multi-access Edge Computing (MEC) brings cloud-grade computation closer to users, reducing latency and relieving battery-powered devices of heavy workloads \cite{etsi_mec}. In a typical deployment, a task can run on one of three tiers: the local client device, a trusted edge server, or a public cloud datacenter.
+
+A large body of research has studied how to split computation between these tiers to minimize latency and energy \cite{zhang2018, mao2017}. However, data privacy is still a weak point in most practical systems. Many existing approaches either treat privacy as a penalty in the cost function \cite{zhu2021} or use reinforcement learning policies that may still route sensitive data to the cloud when latency savings are large \cite{gao2024}.
+
+This is a serious problem. When a document contains medical records, payment data, or private credentials, routing it to an untrusted cloud server is a privacy failure regardless of how fast the server is.
+
+We built PrivacyDrive to answer a specific question: \textit{Can a task offloading system guarantee that sensitive documents never leave the permitted execution tier, while still optimizing latency and energy for the tasks it does offload?}
+
+Our main contributions are:
+\begin{itemize}
+  \item \textbf{Hard privacy admission control.} We classify every document into one of four sensitivity tiers before scheduling begins. Documents can only be sent to destinations their tier permits. This rule is never relaxed.
+  \item \textbf{Multi-objective placement optimizer.} After filtering by privacy, the system minimizes a weighted combination of predicted latency and client energy across live worker states and optional user deadlines.
+  \item \textbf{In-browser semantic processing.} For restricted documents that cannot leave the device, we run a quantized Transformer model (all-MiniLM-L6-v2, ONNX q4) directly inside the browser using WebAssembly. This gives full semantic search and summarization with zero network transmission.
+  \item \textbf{Physical three-tier evaluation.} We report real latency numbers from actual hardware. Some results were surprising: the idle M1 client was 2.4$\times$ faster than the idle edge laptop, which shows that naive offloading rules based on device tier alone are not reliable.
+\end{itemize}
+
+
+%% ─── 2. RELATED WORK ─────────────────────────────────────────────────────────
+\section{Related Work}
+
+Early MEC work focused almost entirely on minimizing computation delay and device energy. Zhang et al.\ formulate the offloading problem as a convex optimization with latency and energy objectives \cite{zhang2018}. Mao et al.\ provide a comprehensive survey of dynamic offloading algorithms, including Lyapunov optimization and binary offloading \cite{mao2017}.
+
+Privacy-aware offloading is a newer and smaller area. Zhu et al.\ model privacy risk as a quantitative information-theoretic cost that enters a joint minimization objective alongside latency \cite{zhu2021}. The limitation of this approach is that privacy is still a soft term — if the latency savings are large enough, the optimizer will still route sensitive data to untrusted destinations.
+
+Gao et al.\ use deep reinforcement learning (DDPG) to classify data sensitivity and dynamically adjust offloading decisions \cite{gao2024}. This is more adaptive, but it introduces non-determinism and lack of explainability, which is problematic when users need to audit exactly why a document was sent somewhere.
+
+Our approach is different from both. We treat privacy as a boolean filter that runs before any cost function is evaluated. A destination is either permitted or it is not. There is no weight large enough to override it. We also deploy real hardware across three tiers and report actual latency measurements rather than relying entirely on simulation.
+
+
+%% ─── 3. SYSTEM MODEL AND THREAT MODEL ────────────────────────────────────────
+\section{System Model and Threat Model}
+
+\subsection{Three-Tier Architecture}
+
+Let task $i$ have candidate execution tiers $j \in \{L, E, C\}$:
+
+\begin{itemize}
+  \item \textbf{Local Client ($L$):} Fully trusted. Data never leaves the device. The client runs a React/TypeScript browser application with in-browser ML inference via WebAssembly.
+  \item \textbf{Trusted Edge ($E$):} Trusted by operational assumption (personal laptop, campus server, or private edge node). Executes tasks statelessly and does not store document content.
+  \item \textbf{Public Cloud ($C$):} Computationally powerful but untrusted with sensitive content. It is assumed to be secure against external attack, but multi-tenant infrastructure and third-party operators make it ineligible for private or restricted data.
+\end{itemize}
+
+\subsection{Sensitivity Classes and Permitted Destinations}
+
+Each document is assigned a sensitivity class $s_i \in \{\text{Public, Personal, Restricted, Uncertain}\}$, which determines the allowed destination set $A_i$:
+
+\begin{itemize}
+  \item \textbf{Public}: $A_i = \{L, E, C\}$ — all tiers permitted.
+  \item \textbf{Personal}: $A_i = \{L, E\}$ — cloud is not permitted.
+  \item \textbf{Restricted}: $A_i = \{L\}$ — must stay on the local device.
+  \item \textbf{Uncertain}: $A_i = \{L\}$ — defaulted to local-only pending manual review.
+\end{itemize}
+
+\subsection{Threat Model}
+
+We assume the cloud is honest-but-curious: it does not actively attack the client, but we cannot guarantee how it stores or processes data it receives. The edge is trusted, but we acknowledge that enterprise edge nodes would ideally require hardware attestation (e.g., TPM) for stronger guarantees.
+
+Out-of-scope threats include: physical device compromise, cold-boot memory attacks, and adversarial attacks on the neural embedding model.
+
+
+%% ─── 4. PRIVACY CLASSIFICATION ───────────────────────────────────────────────
+\section{Privacy Classification}
+
+The privacy classifier runs both in the backend (\texttt{privacydrive.classifier}) and identically in the browser (\texttt{frontend/src/browser/privacy.ts}). It is fully deterministic and rule-based, so every decision can be explained to the user.
+
+\subsection{Signal Detection}
+
+Rather than using a keyword list alone, the classifier looks for contextual combinations:
+
+\begin{itemize}
+  \item \textbf{Payment data:} Detects 13--19 digit patterns that pass a Luhn-compatible check, combined with terms like ``credit card,'' ``cvv,'' or ``billing address.'' It uses negative guards (e.g., order numbers, invoice IDs) to reduce false positives.
+  \item \textbf{Personal contact data:} Matches RFC~5322 email addresses and E.164 phone numbers. If the document context suggests a public corporate directory, the label stays Public; otherwise, it becomes Personal.
+  \item \textbf{Health and confidential records:} Phrases like ``strictly confidential,'' ``do not distribute,'' ``patient name,'' or ``diagnosis'' combined with identity markers immediately trigger Restricted.
+\end{itemize}
+
+\subsection{Priority Arbitration}
+
+When multiple signals are detected, the classifier follows a strict sensitivity lattice:
+\begin{equation}
+  \text{Restricted} \succ \text{Uncertain} \succ \text{Personal} \succ \text{Public}
+\end{equation}
+
+If a document contains ambiguous or conflicting signals, it defaults to Uncertain, which maps to local-only execution. This conservative fallback ensures that uncertainty never increases privacy risk.
+
+
+%% ─── 5. COST MODEL ────────────────────────────────────────────────────────────
+\section{Cost and Energy Model}
+
+\subsection{Latency Formulation}
+
+For local execution, predicted response time is:
+\begin{equation}
+  T_{i,L} = T^{\text{proc}}_{i,L} + T^{\text{queue}}_{i,L}
+\end{equation}
+
+For remote execution on tier $j \in \{E, C\}$:
+\begin{equation}
+  T_{i,j} = \text{RTT}_j + T^{\text{up}}_{i,j} + T^{\text{proc}}_{i,j} + T^{\text{queue}}_{i,j} + T^{\text{down}}_{i,j}
+\end{equation}
+
+where $T^{\text{up}}_{i,j} = D^{\text{in}}_i / R^{\text{up}}_j$ is upload time, $T^{\text{down}}_{i,j} = D^{\text{out}}_i / R^{\text{down}}_j$ is download time, and $T^{\text{queue}}_{i,j}$ is queuing delay at the worker.
+
+\subsection{Client Energy Model}
+
+For local execution, client energy is:
+\begin{equation}
+  E_{i,L} = P^{\text{cpu}} \cdot T^{\text{proc}}_{i,L}
+\end{equation}
+
+For remote execution, the client's radio interface drives energy consumption:
+\begin{equation}
+  E_{i,j} = P^{\text{tx}} \cdot T^{\text{up}}_{i,j} + P^{\text{idle}} \cdot (T^{\text{proc}}_{i,j} + T^{\text{queue}}_{i,j}) + P^{\text{rx}} \cdot T^{\text{down}}_{i,j}
+\end{equation}
+
+where $P^{\text{tx}}$, $P^{\text{idle}}$, and $P^{\text{rx}}$ are the transmit, idle wait, and receive power levels of the client radio.
+
+
+%% ─── 6. PLACEMENT OPTIMIZER ──────────────────────────────────────────────────
+\section{Constrained Placement Optimizer}
+
+The scheduler selects the best tier through two phases.
+
+\subsection{Phase 1: Feasibility Filtering}
+
+A candidate tier $j$ passes filtering only if all three conditions hold:
+\begin{enumerate}
+  \item \textbf{Privacy:} $j \in A_i$ (the destination is permitted for this document's class).
+  \item \textbf{Availability:} Worker $j$ reports \texttt{available = true} and \texttt{ready = true}.
+  \item \textbf{Deadline:} If the user set an optional deadline $D^{\max}_i$, then $T_{i,j} \leq D^{\max}_i$.
+\end{enumerate}
+
+The feasible set is:
+\begin{equation}
+  \mathcal{F}_i = \left\{ j \;\middle|\; j \in A_i \;\land\; \text{Ready}(j) \;\land\; (D^{\max}_i = \emptyset \lor T_{i,j} \le D^{\max}_i) \right\}
+\end{equation}
+
+If $\mathcal{F}_i = \emptyset$, the task is \textbf{deferred} and the user is notified. Privacy is never relaxed to avoid deferral.
+
+\subsection{Phase 2: Cost Minimization}
+
+Among feasible candidates, the scheduler minimizes a normalized weighted cost:
+\begin{equation}
+  J_{i,j} = \alpha \frac{T_{i,j}}{T_{\text{ref}}} + (1-\alpha) \frac{E_{i,j}}{E_{\text{ref}}}
+\end{equation}
+
+where $\alpha \in [0,1]$ is the user's latency weight (adjustable via a slider in the UI), and $T_{\text{ref}}, E_{\text{ref}}$ are normalization constants. The winner is:
+\begin{equation}
+  j^* = \arg\min_{j \in \mathcal{F}_i} J_{i,j}
+\end{equation}
+
+
+%% ─── 7. IN-BROWSER SEMANTIC PROCESSING ───────────────────────────────────────
+\section{In-Browser Semantic Processing}
+
+When a document is classified as Restricted or Uncertain, it must stay on the device. But users still need to search and summarize their documents. We solve this with full in-browser neural inference.
+
+\subsection{Quantized ONNX Inference via WebAssembly}
+
+We use \texttt{@huggingface/transformers} (Transformers.js v4.3.2) with ONNX Runtime Web to run the \texttt{all-MiniLM-L6-v2} model quantized to 4-bit precision (q4). The model payload is approximately 27~MB (about 6.7~MB gzipped). It is downloaded once from Hugging Face Hub and cached in the browser's Cache API, so subsequent loads are instant and work offline.
+
+\subsection{Vector Search}
+
+Documents are split into semantic paragraphs of up to 110 words. For each paragraph, the browser computes a 384-dimensional embedding with mask-aware mean pooling:
+\begin{equation}
+  \mathbf{v} = \frac{\sum_{k=1}^{K} m_k \mathbf{h}_k}{\sum_{k=1}^{K} m_k}, \quad \hat{\mathbf{v}} = \frac{\mathbf{v}}{\|\mathbf{v}\|_2}
+\end{equation}
+
+Search queries are embedded in the same way. Similarity is computed as a dot product (equivalent to cosine similarity on unit vectors): $\text{sim}(\mathbf{q}, \mathbf{p}) = \mathbf{q} \cdot \mathbf{p}$. All embeddings are stored in IndexedDB. No data leaves the browser.
+
+\subsection{MMR Extractive Summarization}
+
+We implement semantic Maximal Marginal Relevance (MMR) extractive summarization. The document centroid is:
+\begin{equation}
+  \mathbf{c} = \frac{1}{M}\sum_{m=1}^{M} \hat{\mathbf{s}}_m
+\end{equation}
+
+Sentences are selected greedily by maximizing:
+\begin{equation}
+  \text{Score}(s_m) = 0.72 \cdot (\mathbf{s}_m \cdot \mathbf{c}) - 0.28 \cdot \max_{s_k \in \mathcal{S}_{\text{sel}}} (\mathbf{s}_m \cdot \mathbf{s}_k)
+\end{equation}
+
+The first term rewards relevance to the document center; the second term penalizes redundancy with already-selected sentences. This produces a concise, diverse summary made of original sentences, with no risk of hallucination.
+
+
+%% ─── 8. EXPERIMENTAL SETUP ───────────────────────────────────────────────────
+\section{Experimental Setup}
+
+We deployed the full system across three physical machines:
+
+\begin{itemize}
+  \item \textbf{Local Client:} Apple MacBook Air (M1, 8-core, 16~GB unified RAM), macOS Sonoma.
+  \item \textbf{Trusted Edge:} AMD Ryzen 5 5500U laptop (6 cores / 12 threads, 8~GB DDR4), Windows 11 with OpenSSH and Python 3.12.
+  \item \textbf{Cloud Worker:} Microsoft Azure Standard\_B2ats\_v2 VM (2 burstable vCPUs, AMD EPYC 7763, 1~GiB RAM), Ubuntu 24.04 LTS.
+\end{itemize}
+
+All workers ran the same ONNX Runtime version (1.19.2) and the same pinned Sentence-Transformers model. Timing was recorded as medians over multiple warm-up runs.
+
+We compare the proposed PrivacyDrive scheduler against three baselines:
+\begin{itemize}
+  \item \textbf{Always-Local:} All tasks run on the client regardless of workload.
+  \item \textbf{Always-Cloud:} All tasks are sent to the cloud.
+  \item \textbf{Latency-Only:} Greedily picks the fastest tier, ignoring privacy.
+\end{itemize}
+
+
+%% ─── 9. RESULTS ──────────────────────────────────────────────────────────────
+\section{Results and Evaluation}
+
+\subsection{Privacy Classification Accuracy}
+
+We evaluated the classifier on 11 synthetic documents covering: public event announcements, corporate contact directories, personal resumes, credit card statements, medical records, order confirmations, and mixed-sensitivity text.
+
+\begin{itemize}
+  \item \textbf{Accuracy:} 11/11 documents received the expected sensitivity label.
+  \item \textbf{Conservative fallback:} 2 ambiguous documents (18.2\%) were classified as Uncertain, which correctly defaults to local-only execution.
+  \item \textbf{Masking:} All detected credit card numbers, phone numbers, and email addresses were masked in the audit log before storage.
+\end{itemize}
+
+\subsection{Physical Latency: Client vs.\ Edge}
+
+Table~\ref{tab:latency} shows median embedding times across passage counts at idle hardware state. The M1 client consistently outperformed the Ryzen edge by approximately 2.4$\times$.
+
+\begin{table}[h]
+  \caption{Idle Hardware Latency: Client vs.\ Edge}
+  \label{tab:latency}
+  \centering
+  \begin{tabular}{cccc}
+    \toprule
+    \textbf{Passages} & \textbf{M1 Client (ms)} & \textbf{Ryzen Edge (ms)} & \textbf{Ratio} \\
+    \midrule
+    1   & 18.51    & 42.49     & 2.30$\times$ \\
+    32  & 441.01   & 1076.32   & 2.44$\times$ \\
+    128 & 1764.20  & 4305.20   & 2.44$\times$ \\
+    512 & 7343.94  & 17614.59  & 2.40$\times$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+This is an important systems finding: offloading to an idle edge server actually makes things slower. Offloading is only beneficial when the local device is under queue pressure or energy constrained. Static policies that always offload are not optimal.
+
+\subsection{Azure Cloud Memory Adaptation}
+
+The Azure VM has only 1~GiB of RAM. Running PyTorch directly on the VM caused out-of-memory crashes during 32-passage inference. We switched to ONNX Runtime with a streaming batch size of 1, which kept peak memory below 320~MB. Table~\ref{tab:cloud} shows the resulting end-to-end WAN latencies.
+
+\begin{table}[h]
+  \caption{Azure Cloud Worker Latency (End-to-End via WAN)}
+  \label{tab:cloud}
+  \centering
+  \begin{tabular}{ccc}
+    \toprule
+    \textbf{Passages} & \textbf{Worker Processing (ms)} & \textbf{End-to-End (ms)} \\
+    \midrule
+    1   & 76.29    & 518.67    \\
+    32  & 2389.97  & 3912.63   \\
+    128 & 9564.68  & 15441.44  \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Policy Violations Under Queue Pressure}
+
+We simulated a scenario where the local client has a high queue depth, making local execution slow. We ran 5 tasks with a mix of sensitivity levels across all four scheduling strategies.
+
+\begin{table}[h]
+  \caption{Scheduler Comparison Under Client Queue Pressure}
+  \label{tab:violations}
+  \centering
+  \begin{tabular}{lccc}
+    \toprule
+    \textbf{Strategy} & \textbf{Violations} & \textbf{Avg Latency (ms)} & \textbf{Avg Energy (J)} \\
+    \midrule
+    \textbf{PrivacyDrive (ours)} & \textbf{0} & 1061.54 & 1.471 \\
+    Always-Local                 & 0           & 918.80  & 2.297 \\
+    Always-Cloud                 & 3 (60\%)    & 642.10  & 0.985 \\
+    Latency-Only                 & 2 (40\%)    & 615.40  & 0.941 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+PrivacyDrive achieved zero policy violations while still reducing client energy consumption from 2.297~J (always-local) down to 1.471~J, because it correctly offloaded public documents to cloud and personal documents to the edge.
+
+\subsection{Parameter Sensitivity}
+
+We swept the latency weight $\alpha$ from 0.0 to 1.0. Between $\alpha = 0.0$ and $\alpha = 0.75$, tier selection was stable: public documents went to cloud or edge, personal documents stayed on the edge, and restricted documents always stayed local. Only at $\alpha = 1.0$ did the optimizer prioritize speed so strongly that all tasks ran locally (918.80~ms, 2.297~J). Varying the client power parameters by $\pm 30\%$ changed estimated energy between 1.03~J and 1.91~J without affecting tier selection or policy compliance.
+
+
+%% ─── 10. LIMITATIONS ─────────────────────────────────────────────────────────
+\section{Limitations}
+
+We identify four main limitations of the current system:
+
+\begin{itemize}
+  \item \textbf{Rule-based classifier scope.} The privacy classifier uses regular expressions and term dictionaries. It works well for standard formats like credit cards, emails, and medical records, but it does not handle complex or multilingual text as well as a trained language model would.
+  \item \textbf{Edge trust assumption.} We assume the edge node is trusted. For enterprise deployments, hardware attestation (e.g., TPM or Intel SGX) would be needed to verify this at runtime.
+  \item \textbf{Estimated device energy.} Energy consumption is calculated from empirically calibrated power models, not measured by hardware power meters. This introduces some inaccuracy for devices with dynamic power management.
+  \item \textbf{Text-only documents.} The system handles plaintext and text-layer PDFs. Scanned image PDFs that require OCR are safely rejected rather than processed incorrectly.
+\end{itemize}
+
+
+%% ─── 11. CONCLUSION ──────────────────────────────────────────────────────────
+\section{Conclusion}
+
+PrivacyDrive shows that a task offloading system can enforce strict, non-negotiable privacy boundaries while still optimizing latency and energy across a real three-tier deployment. The key design choice is treating privacy classification as an admission gate rather than a cost term. This gives the system a provable guarantee: sensitive documents are never sent to a tier they are not permitted to reach, regardless of how the optimizer would otherwise rank the tiers.
+
+Our physical deployment also revealed that the relationship between device tier and execution speed is not what simple offloading rules assume. An idle Apple M1 client was 2.4 times faster than an idle AMD Ryzen 5 edge server. This means that offloading is only worth doing when the local device is under load, not as a default policy.
+
+Going forward, we plan to extend the privacy classifier with a small fine-tuned language model to handle ambiguous documents more accurately. We also plan to add hardware attestation support for edge nodes and explore formal privacy verification methods for the classification module.
+
+%% ─── REFERENCES ──────────────────────────────────────────────────────────────
+\balance
+\begin{thebibliography}{00}
+
+\bibitem{etsi_mec}
+ETSI, ``Multi-access Edge Computing (MEC); Framework and Reference Architecture,'' ETSI GS MEC 003 V3.1.1, 2022.
+
+\bibitem{zhang2018}
+H.~Zhang, Y.~Xiao, S.~Bu, D.~Niyato, F.~R. Yu, and Z.~Han, ``Computing Resource Allocation and Latency Energy Tradeoff in Mobile Edge Computing Systems,'' \textit{IEEE Transactions on Wireless Communications}, vol.~17, no.~8, pp.~5606--5619, 2018.
+
+\bibitem{mao2017}
+Y.~Mao, C.~You, J.~Zhang, K.~Huang, and K.~B. Letaief, ``A Survey on Mobile Edge Computing: The Communication and Computing Perspective,'' \textit{IEEE Communications Surveys \& Tutorials}, vol.~19, no.~4, pp.~2322--2358, 2017.
+
+\bibitem{zhu2021}
+X.~Zhu, C.~Jiang, L.~Kuang, N.~Ge, and S.~Guo, ``Privacy-Aware Online Task Offloading for Mobile-Edge Computing,'' \textit{Wireless Communications and Mobile Computing}, vol.~2021, Article ID~6622947, 2021.
+
+\bibitem{gao2024}
+L.~Gao, S.~Chen, and M.~Ding, ``An Improved DDPG-Based Privacy Sensitive Level Protection Computation Offloading Method in Mobile Edge Computing,'' \textit{Future Generation Computer Systems}, vol.~158, pp.~112--124, 2024.
+
+\bibitem{xu2023}
+J.~Xu, L.~Chen, and P.~Zhou, ``Joint Service Caching and Task Offloading for Mobile Edge Computing in Dense Networks,'' \textit{IEEE Transactions on Mobile Computing}, vol.~22, no.~6, pp.~3254--3267, 2023.
+
+\bibitem{reimers2019}
+N.~Reimers and I.~Gurevych, ``Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks,'' \textit{Proc.\ EMNLP}, pp.~3982--3992, 2019.
+
+\bibitem{devlin2019}
+J.~Devlin, M.~W. Chang, K.~Lee, and K.~Toutanova, ``BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding,'' \textit{Proc.\ NAACL-HLT}, pp.~4171--4186, 2019.
+
+\end{thebibliography}
+
+\end{document}

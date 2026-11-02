@@ -195,14 +195,7 @@ function App() {
             <button className={`nav-tab ${tab === "experiments" ? "active" : ""}`} onClick={openExperiments}>
               <span className="tab-icon">⌁</span> Experiments
             </button>
-            <a
-              href="https://github.com/Saksham-Gupta-GH/privacy-aware-task-offloading/blob/main/docs/PAPER_DRAFT.md"
-              target="_blank"
-              rel="noreferrer"
-              className="paper-pill-link"
-            >
-              Paper ↗
-            </a>
+
           </nav>
 
           <div className="worker-status-pills">

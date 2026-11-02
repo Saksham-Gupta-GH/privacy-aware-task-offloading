@@ -119,20 +119,6 @@ button { cursor: pointer; }
 .nav-tab .tab-icon {
   font-size: 14px;
 }
-.paper-pill-link {
-  text-decoration: none;
-  color: var(--google-blue);
-  border: 1px solid rgba(26,115,232,0.3);
-  padding: 6px 14px;
-  border-radius: var(--radius-pill);
-  font-size: 12px;
-  font-weight: 600;
-  transition: all 0.2s ease;
-}
-.paper-pill-link:hover {
-  background: var(--google-blue-light);
-  border-color: var(--google-blue);
-}
 
 /* Worker Status Pills */
 .worker-status-pills {
