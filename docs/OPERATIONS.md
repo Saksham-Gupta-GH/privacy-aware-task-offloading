@@ -12,7 +12,20 @@
 | Cloud tunnel on Mac | User's Mac | `127.0.0.1:18002` |
 | Reverse Edge tunnel on Azure | Azure student VM | `127.0.0.1:18001` (from HP Edge) |
 
-No worker API is directly exposed to the public internet. The Azure cloud worker binds to `127.0.0.1:8001`. A dedicated, memory-safe public gateway (`privacydrive.public_gateway`) runs on `127.0.0.1:8002` behind Nginx SSL at `https://20-219-130-205.sslip.io`. It exposes only `/api/status` and `/api/browser/summarize`, independently reclassifies inputs, blocks restricted/uncertain data from leaving the local client, and proxies permitted requests to loopback workers without persisting data.
+No worker API is directly exposed to the public internet. The Azure cloud worker binds to `127.0.0.1:8001`. A dedicated, memory-safe public gateway (`privacydrive.public_gateway`) runs on `127.0.0.1:8002` behind Nginx SSL at `https://20-219-130-205.sslip.io`. It exposes account endpoints, `/api/status`, and the authenticated `/api/browser/summarize` route. It independently reclassifies inputs, blocks restricted/uncertain data from leaving the local client, and proxies permitted requests without persisting document content.
+
+## Account persistence
+
+The gateway stores account profiles, password hashes, and revocable session hashes in a
+small SQLite database. It never stores uploaded documents, summaries, embeddings, or
+search queries. Set a persistent location in the gateway service environment:
+
+```bash
+PRIVACYDRIVE_AUTH_DATABASE=/var/lib/privacydrive/auth.db
+```
+
+Create the directory with write access for the gateway service user and include the
+database in operational backups. Do not commit it to Git; `data/*.db` is already ignored.
 
 ## Worker command
 

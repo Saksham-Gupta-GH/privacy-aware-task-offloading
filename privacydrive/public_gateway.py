@@ -1,9 +1,10 @@
 """Lightweight public gateway for PrivacyDrive.
 
-Designed to run on the Azure cloud VM with a minimal memory footprint (< 30 MB).
-Does NOT import numpy, onnxruntime, transformers, torch, or SQLite.
+Designed to run on the Azure cloud VM with a minimal memory footprint.
+Does NOT import numpy, onnxruntime, transformers, or torch.
 Enforces hard privacy policy, reclassifies inputs, checks worker health,
-and proxies permitted requests to Cloud (127.0.0.1:8001) or Edge (127.0.0.1:18001).
+and proxies permitted requests without persisting document content. A small SQLite
+database stores accounts and hashed sessions only.
 """
 
 from __future__ import annotations
@@ -13,18 +14,24 @@ import os
 import time
 import uuid
 from collections import defaultdict
+from pathlib import Path
 from typing import Any, Literal
 
 import httpx
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from .auth import AuthService
 from .classifier import PrivacyClassifier
 
 
+ROOT = Path(__file__).resolve().parents[1]
 EDGE_URL = os.environ.get("PRIVACYDRIVE_EDGE_URL", "http://127.0.0.1:18001")
 CLOUD_URL = os.environ.get("PRIVACYDRIVE_CLOUD_URL", "http://127.0.0.1:8001")
+AUTH_DATABASE_PATH = Path(
+    os.environ.get("PRIVACYDRIVE_AUTH_DATABASE", ROOT / "data" / "privacydrive-auth.db")
+)
 ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.environ.get(
@@ -64,7 +71,9 @@ class BrowserSummaryRequest(BaseModel):
 
 
 classifier = PrivacyClassifier()
+auth = AuthService(AUTH_DATABASE_PATH)
 app = FastAPI(title="PrivacyDrive Public Gateway", version="1.0.0")
+app.include_router(auth.router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -125,7 +134,11 @@ async def status() -> dict[str, Any]:
 
 
 @app.post("/api/browser/summarize")
-async def browser_summarize(request: BrowserSummaryRequest, req: Request) -> dict[str, Any]:
+async def browser_summarize(
+    request: BrowserSummaryRequest,
+    req: Request,
+    _user: dict[str, Any] = Depends(auth.require_user),
+) -> dict[str, Any]:
     client_ip = req.client.host if req.client else "unknown"
     check_rate_limit(client_ip)
 

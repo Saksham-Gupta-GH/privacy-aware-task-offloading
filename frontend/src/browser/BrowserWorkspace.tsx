@@ -4,7 +4,7 @@ import { createSearchIndex, embedTexts, summarizeWithMiniLM } from "./ml";
 import { classifyInBrowser } from "./privacy";
 import { BrowserPlacement, BrowserWorker, decideBrowserPlacement } from "./scheduler";
 import { calibrateScore, dot } from "./semantic";
-import { listBrowserDocuments, removeBrowserDocument, saveBrowserDocument } from "./storage";
+import { claimLegacyBrowserDocuments, listBrowserDocuments, removeBrowserDocument, saveBrowserDocument } from "./storage";
 import { summarizeExtractively } from "./summarize";
 import { BrowserDocument, BrowserSearchResult } from "./types";
 import {
@@ -47,7 +47,7 @@ function highlightQuery(text: string, queryText: string) {
   );
 }
 
-export function BrowserWorkspace({ workers, page, onOpenFile }: { workers: Record<string, BrowserWorker>; page: "files" | "search"; onOpenFile: () => void }) {
+export function BrowserWorkspace({ workers, page, token, userId, onOpenFile }: { workers: Record<string, BrowserWorker>; page: "files" | "search"; token: string; userId: string; onOpenFile: () => void }) {
   const [documents, setDocuments] = useState<BrowserDocument[]>([]);
   const [selectedId, setSelectedId] = useState("");
   const [error, setError] = useState("");
@@ -66,12 +66,17 @@ export function BrowserWorkspace({ workers, page, onOpenFile }: { workers: Recor
     [documents, selectedId],
   );
   const refresh = async () => {
-    const values = await listBrowserDocuments();
+    await claimLegacyBrowserDocuments(userId);
+    const values = await listBrowserDocuments(userId);
     setDocuments(values);
     if (!selectedId && values.length) setSelectedId(values[0].id);
   };
 
-  useEffect(() => { refresh().catch((reason) => setError(String(reason))); }, []);
+  useEffect(() => {
+    setSelectedId("");
+    setDocuments([]);
+    refresh().catch((reason) => setError(String(reason)));
+  }, [userId]);
 
   const upload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -81,13 +86,14 @@ export function BrowserWorkspace({ workers, page, onOpenFile }: { workers: Recor
       const extracted = await readDocumentLocally(file);
       const document: BrowserDocument = {
         id: crypto.randomUUID(),
+        ownerId: userId,
         name: file.name,
         content: extracted.content,
         mediaType: extracted.mediaType,
         classification: classifyInBrowser(extracted.content),
         createdAt: Date.now(),
       };
-      await saveBrowserDocument(document);
+      await saveBrowserDocument(document, userId);
       await refresh();
       setSelectedId(document.id);
     } catch (reason) {
@@ -132,7 +138,7 @@ export function BrowserWorkspace({ workers, page, onOpenFile }: { workers: Recor
       } else {
         const response = await fetch(`${CONTROL_API}/api/browser/summarize`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({
             document_id: selected.id,
             document_name: selected.name,
@@ -153,7 +159,7 @@ export function BrowserWorkspace({ workers, page, onOpenFile }: { workers: Recor
         summaryTier: placement.selectedTier,
         receipt,
       };
-      await saveBrowserDocument(updated);
+      await saveBrowserDocument(updated, userId);
       await refresh();
       setSelectedId(updated.id);
     } catch (reason) {
@@ -175,7 +181,7 @@ export function BrowserWorkspace({ workers, page, onOpenFile }: { workers: Recor
           searchPassages,
           embeddingModel: "all-MiniLM-L6-v2",
           receipt: document.receipt,
-        });
+        }, userId);
       }
       await refresh();
     } catch (reason) {
@@ -224,16 +230,17 @@ export function BrowserWorkspace({ workers, page, onOpenFile }: { workers: Recor
     const createdAt = Date.now();
     for (const [index, sample] of DEMO_DOCUMENTS.entries()) {
       await saveBrowserDocument({
-        id: `demo-${index}`,
+        id: `demo-${userId}-${index}`,
+        ownerId: userId,
         name: sample.name,
         content: sample.content,
         mediaType: "text/plain",
         classification: classifyInBrowser(sample.content),
         createdAt: createdAt + index,
-      });
+      }, userId);
     }
     await refresh();
-    setSelectedId("demo-0");
+    setSelectedId(`demo-${userId}-0`);
   };
 
   const indexedCount = documents.filter((document) => document.searchPassages?.length).length;
@@ -244,7 +251,7 @@ export function BrowserWorkspace({ workers, page, onOpenFile }: { workers: Recor
       setDeleteArmed(true);
       return;
     }
-    await removeBrowserDocument(selected.id);
+    await removeBrowserDocument(selected.id, userId);
     setSelectedId("");
     setDeleteArmed(false);
     setDecision(null);

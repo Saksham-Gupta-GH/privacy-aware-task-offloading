@@ -13,12 +13,13 @@ from typing import Any, Literal, Optional
 
 import httpx
 import numpy as np
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from .auth import AuthService
 from .classifier import PrivacyClassifier
 from .embedding_onnx import MODEL_REVISION, OnnxEmbedder
 from .scheduler import PlacementOptimizer, WorkerState
@@ -28,6 +29,9 @@ from .storage import DocumentStore
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
 DATABASE_PATH = Path(os.environ.get("PRIVACYDRIVE_DATABASE", DATA_DIR / "privacydrive.db"))
+AUTH_DATABASE_PATH = Path(
+    os.environ.get("PRIVACYDRIVE_AUTH_DATABASE", DATA_DIR / "privacydrive-auth.db")
+)
 EDGE_URL = os.environ.get("PRIVACYDRIVE_EDGE_URL", "http://127.0.0.1:18001")
 CLOUD_URL = os.environ.get("PRIVACYDRIVE_CLOUD_URL", "http://127.0.0.1:18002")
 FRONTEND_DIST = ROOT / "frontend" / "dist"
@@ -62,6 +66,7 @@ class BrowserSummaryRequest(BaseModel):
 classifier = PrivacyClassifier()
 optimizer = PlacementOptimizer()
 store = DocumentStore(DATABASE_PATH)
+auth = AuthService(AUTH_DATABASE_PATH)
 local_embedder: OnnxEmbedder | None = None
 
 
@@ -151,6 +156,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="PrivacyDrive", version="1.0.0", lifespan=lifespan)
+app.include_router(auth.router)
 configured_origins = [
     value.strip()
     for value in os.environ.get("PRIVACYDRIVE_CORS_ORIGINS", "").split(",")
@@ -322,7 +328,10 @@ async def search(request: SearchRequest) -> dict[str, Any]:
 
 
 @app.post("/api/browser/summarize")
-async def browser_summarize(request: BrowserSummaryRequest) -> dict[str, Any]:
+async def browser_summarize(
+    request: BrowserSummaryRequest,
+    _user: dict[str, Any] = Depends(auth.require_user),
+) -> dict[str, Any]:
     """Recheck browser classification, then execute only on a permitted remote tier."""
     verified = classifier.classify(request.content)
     if verified.sensitivity != request.reported_sensitivity:

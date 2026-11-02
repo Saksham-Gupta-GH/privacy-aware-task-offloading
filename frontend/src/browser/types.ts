@@ -11,6 +11,7 @@ export type BrowserClassification = {
 
 export type BrowserDocument = {
   id: string;
+  ownerId: string;
   name: string;
   mediaType: "text/plain" | "application/pdf";
   content: string;
