@@ -25,6 +25,11 @@ default. To keep it elsewhere, set a persistent directory before starting the se
 PRIVACYDRIVE_AUTH_DIR=/var/lib/privacydrive ./scripts/start_public_gateway.sh
 ```
 
+During the one-time rollout, start the gateway with
+`PRIVACYDRIVE_REQUIRE_AUTH=false` before deploying the authenticated frontend. After
+the frontend is live, restart the launcher normally; authentication is required by
+default.
+
 Create the directory with write access for the gateway service user and include the
 database in operational backups. Do not commit it to Git; `data/*.db` is already ignored.
 

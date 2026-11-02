@@ -3,6 +3,7 @@ set -euo pipefail
 
 worker_dir="${PRIVACYDRIVE_WORKER_DIR:-$HOME/privacydrive-worker}"
 auth_dir="${PRIVACYDRIVE_AUTH_DIR:-$worker_dir/data}"
+require_auth="${PRIVACYDRIVE_REQUIRE_AUTH:-true}"
 service="privacydrive-gateway.service"
 
 if [[ ! -x "$worker_dir/.venv/bin/uvicorn" ]]; then
@@ -23,6 +24,7 @@ systemd-run --user \
   --setenv=PRIVACYDRIVE_CLOUD_URL="http://127.0.0.1:8001" \
   --setenv=PRIVACYDRIVE_EDGE_URL="http://127.0.0.1:18001" \
   --setenv=PRIVACYDRIVE_AUTH_DATABASE="$auth_dir/privacydrive-auth.db" \
+  --setenv=PRIVACYDRIVE_REQUIRE_AUTH="$require_auth" \
   "$worker_dir/.venv/bin/uvicorn" privacydrive.public_gateway:app \
   --host 127.0.0.1 --port 8002
 

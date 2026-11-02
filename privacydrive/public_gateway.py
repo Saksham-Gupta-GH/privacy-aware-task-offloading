@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 import httpx
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -32,6 +32,7 @@ CLOUD_URL = os.environ.get("PRIVACYDRIVE_CLOUD_URL", "http://127.0.0.1:8001")
 AUTH_DATABASE_PATH = Path(
     os.environ.get("PRIVACYDRIVE_AUTH_DATABASE", ROOT / "data" / "privacydrive-auth.db")
 )
+REQUIRE_AUTH = os.environ.get("PRIVACYDRIVE_REQUIRE_AUTH", "true").lower() == "true"
 ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.environ.get(
@@ -137,10 +138,12 @@ async def status() -> dict[str, Any]:
 async def browser_summarize(
     request: BrowserSummaryRequest,
     req: Request,
-    _user: dict[str, Any] = Depends(auth.require_user),
 ) -> dict[str, Any]:
     client_ip = req.client.host if req.client else "unknown"
     check_rate_limit(client_ip)
+    authorization = req.headers.get("authorization")
+    if authorization or REQUIRE_AUTH:
+        await auth.require_user(authorization)
 
     # 1. Independent privacy reclassification on the gateway
     verified = classifier.classify(request.content)
