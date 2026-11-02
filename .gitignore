@@ -13,4 +13,6 @@ frontend/vite.config.d.ts
 data/*.db
 *.log
 2026 problem statements (2).docx
+output/
+submission/
 

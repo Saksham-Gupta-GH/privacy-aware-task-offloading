@@ -65,6 +65,80 @@ def evaluate(
     }
 
 
+def evaluate_baselines(
+    optimizer: PlacementOptimizer, scenario: str = "client_busy"
+) -> list[dict[str, object]]:
+    """Evaluate all strategies over the same classified tasks and cost model."""
+    classifier = PrivacyClassifier()
+    states = {
+        tier: WorkerState(tier=tier, available=True, ready=True)
+        for tier in ("local", "edge", "cloud")
+    }
+    methods: dict[str, dict[str, object]] = {
+        name: {"latencies": [], "energies": [], "policy_violations": 0, "tier_counts": Counter()}
+        for name in ("privacy_aware", "always_local", "always_cloud", "latency_only")
+    }
+    for filename in DOCUMENTS:
+        content = (ROOT / "data" / "synthetic" / "documents" / filename).read_text(
+            encoding="utf-8"
+        )
+        classification = classifier.classify(content)
+        unrestricted = optimizer.decide(
+            allowed_destinations=("local", "edge", "cloud"),
+            worker_states=states,
+            input_bytes=len(content.encode("utf-8")),
+            passage_count=32,
+            latency_weight=0.65,
+            scenario=scenario,
+        )
+        by_tier = {
+            item.tier: item
+            for item in unrestricted.candidates
+            if item.predicted_latency_ms is not None
+        }
+        proposed = optimizer.decide(
+            allowed_destinations=classification.allowed_destinations,
+            worker_states=states,
+            input_bytes=len(content.encode("utf-8")),
+            passage_count=32,
+            latency_weight=0.65,
+            scenario=scenario,
+        )
+        proposed_item = next(item for item in proposed.candidates if item.selected)
+        selections = {
+            "privacy_aware": proposed_item,
+            "always_local": by_tier["local"],
+            "always_cloud": by_tier["cloud"],
+            "latency_only": min(
+                by_tier.values(), key=lambda item: float(item.predicted_latency_ms)
+            ),
+        }
+        for method, item in selections.items():
+            values = methods[method]
+            values["latencies"].append(float(item.predicted_latency_ms))
+            values["energies"].append(float(item.estimated_device_energy_j))
+            values["tier_counts"][item.tier] += 1
+            values["policy_violations"] += int(
+                item.tier not in classification.allowed_destinations
+            )
+
+    output: list[dict[str, object]] = []
+    for method, values in methods.items():
+        latencies = values["latencies"]
+        energies = values["energies"]
+        output.append(
+            {
+                "strategy": method,
+                "tasks": len(DOCUMENTS),
+                "average_predicted_latency_ms": round(sum(latencies) / len(latencies), 3),
+                "average_estimated_device_energy_j": round(sum(energies) / len(energies), 4),
+                "policy_violations": values["policy_violations"],
+                "tier_counts": dict(sorted(values["tier_counts"].items())),
+            }
+        )
+    return output
+
+
 def main() -> None:
     base = PlacementOptimizer()
     alpha_sweep = [evaluate(base, alpha) for alpha in (0.0, 0.25, 0.5, 0.65, 0.75, 1.0)]
@@ -80,8 +154,10 @@ def main() -> None:
     result = {
         "schema_version": 1,
         "calibration_version": base.calibration["version"],
-        "scenario": "live all-ready worker state",
+        "alpha_sweep_scenario": "live all-ready worker state",
+        "baseline_scenario": "client_busy: 15000 ms simulated local queue delay; all workers ready",
         "documents": DOCUMENTS,
+        "baseline_comparison": evaluate_baselines(base),
         "alpha_sweep": alpha_sweep,
         "power_sensitivity": sensitivity,
     }

@@ -17,6 +17,11 @@ class PrivacyClassifierTests(unittest.TestCase):
         cls.manifest = json.loads(
             (ROOT / "data" / "synthetic" / "manifest.json").read_text(encoding="utf-8")
         )
+        cls.adversarial_cases = json.loads(
+            (ROOT / "data" / "synthetic" / "privacy-adversarial-cases.json").read_text(
+                encoding="utf-8"
+            )
+        )
 
     def test_labelled_synthetic_corpus(self) -> None:
         for case in self.manifest:
@@ -25,6 +30,12 @@ class PrivacyClassifierTests(unittest.TestCase):
                     ROOT / "data" / "synthetic" / "documents" / case["file"]
                 ).read_text(encoding="utf-8")
                 result = self.classifier.classify(text)
+                self.assertEqual(case["expected"], result.sensitivity)
+
+    def test_adversarial_synthetic_corpus(self) -> None:
+        for case in self.adversarial_cases:
+            with self.subTest(case=case["id"]):
+                result = self.classifier.classify(case["content"])
                 self.assertEqual(case["expected"], result.sensitivity)
 
     def test_restricted_policy_is_local_only(self) -> None:

@@ -1,0 +1,122 @@
+[
+  {
+    "id": "hard_public_research_abstract",
+    "expected": "public",
+    "purpose": "Ordinary technical prose without identifiers",
+    "content": "This public research abstract compares energy-aware scheduling methods for mobile edge computing."
+  },
+  {
+    "id": "hard_public_published_email",
+    "expected": "public",
+    "purpose": "Explicitly published nearby contact email",
+    "content": "Public directory. Published contact: outreach@example.edu for workshop registration."
+  },
+  {
+    "id": "hard_public_published_phone",
+    "expected": "public",
+    "purpose": "Explicitly published nearby contact phone",
+    "content": "Public information for the museum desk. Public contact: +1 202-555-0198."
+  },
+  {
+    "id": "hard_public_order_luhn",
+    "expected": "public",
+    "purpose": "Luhn-valid digits explicitly identified as an order number",
+    "content": "Order number: 4111 1111 1111 1111. The demonstration parcel is ready."
+  },
+  {
+    "id": "hard_public_tracking_number",
+    "expected": "public",
+    "purpose": "Long shipping reference without payment context",
+    "content": "Tracking number: 1234-5678-9012-3456. This is fictional public shipping information."
+  },
+  {
+    "id": "hard_public_general_health",
+    "expected": "public",
+    "purpose": "General health education without identity",
+    "content": "Public information about treatment options and prevention practices for seasonal flu."
+  },
+  {
+    "id": "hard_personal_email",
+    "expected": "personal",
+    "purpose": "Unlabelled private email",
+    "content": "Send the private draft to learner@example.test before Friday."
+  },
+  {
+    "id": "hard_personal_phone",
+    "expected": "personal",
+    "purpose": "Unlabelled private phone",
+    "content": "Call the project coordinator at +1 202-555-0176 after the meeting."
+  },
+  {
+    "id": "hard_personal_marker",
+    "expected": "personal",
+    "purpose": "Explicit personal-data marker without a formatted identifier",
+    "content": "This document contains personal data supplied by a fictional participant."
+  },
+  {
+    "id": "hard_private_contact_marker",
+    "expected": "personal",
+    "purpose": "Explicit private-contact marker",
+    "content": "Private contact details are available to members of the trusted project team."
+  },
+  {
+    "id": "hard_restricted_visa",
+    "expected": "restricted",
+    "purpose": "Luhn-valid Visa test number with payment context",
+    "content": "Billing record. Credit card number: 4111 1111 1111 1111. Expiry 12/30."
+  },
+  {
+    "id": "hard_restricted_mastercard",
+    "expected": "restricted",
+    "purpose": "Luhn-valid Mastercard test number with debit-card context",
+    "content": "Debit card: 5555-5555-5555-4444. CVV is intentionally omitted from this test."
+  },
+  {
+    "id": "hard_restricted_confidential",
+    "expected": "restricted",
+    "purpose": "Explicit confidential-document marker",
+    "content": "CONFIDENTIAL DOCUMENT. Internal fictional merger analysis."
+  },
+  {
+    "id": "hard_restricted_distribution",
+    "expected": "restricted",
+    "purpose": "Explicit distribution prohibition",
+    "content": "Draft security assessment. Do not distribute outside the authorized group."
+  },
+  {
+    "id": "hard_restricted_patient_identity",
+    "expected": "restricted",
+    "purpose": "Diagnosis linked to patient identity wording",
+    "content": "Patient name: Alex Sample. Diagnosis: fictional condition for testing only."
+  },
+  {
+    "id": "hard_restricted_medical_phone",
+    "expected": "restricted",
+    "purpose": "Medical record linked to a phone number",
+    "content": "Medical record for a fictional user. Phone: +1 202-555-0155. Treatment pending."
+  },
+  {
+    "id": "hard_uncertain_invalid_payment_number",
+    "expected": "uncertain",
+    "purpose": "Invalid long number even though payment wording is present",
+    "content": "Payment card candidate: 1234 5678 9012 3456. Source is unknown."
+  },
+  {
+    "id": "hard_uncertain_unlabelled_long_number",
+    "expected": "uncertain",
+    "purpose": "Unlabelled long digit sequence",
+    "content": "Imported field value 9876-5432-1098-7654 with no reliable description."
+  },
+  {
+    "id": "hard_uncertain_repeated_digits",
+    "expected": "uncertain",
+    "purpose": "Repeated digits must not pass Luhn validation",
+    "content": "Unknown identifier: 1111 1111 1111 1111. Manual review is required."
+  },
+  {
+    "id": "hard_restricted_precedence",
+    "expected": "restricted",
+    "purpose": "Restricted marker must override personal and ambiguous signals",
+    "content": "Confidential document for owner@example.test. Unknown number 1234 5678 9012 3456."
+  }
+]

@@ -8,6 +8,19 @@ const workers = {
 };
 
 describe("browser placement optimizer", () => {
+  it("uses the calibration-v2 local processing and energy model", () => {
+    const decision = decideBrowserPlacement({
+      classification: classifyInBrowser("Public workshop agenda"),
+      workers,
+      content: "Public workshop agenda",
+      latencyWeight: 1,
+      scenario: "live",
+    });
+    const local = decision.candidates.find((item) => item.tier === "local");
+    expect(local?.predictedLatencyMs).toBe(38.4);
+    expect(local?.estimatedDeviceEnergyJ).toBe(0.096);
+  });
+
   it("never offloads restricted input", () => {
     const decision = decideBrowserPlacement({
       classification: classifyInBrowser("Credit card 4111 1111 1111 1111 with CVV 123"),

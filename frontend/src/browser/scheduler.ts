@@ -1,4 +1,5 @@
 import { BrowserClassification } from "./types";
+import { buildSearchPassages } from "./semantic";
 
 export type BrowserWorker = {
   available?: boolean;
@@ -26,17 +27,28 @@ export type BrowserPlacement = {
 };
 
 const PARAMETERS = {
-  local: { base: 8, perUnit: 4, rtt: 0, idlePower: 0, computePower: 2.5 },
-  edge: { base: 18, perUnit: 3, rtt: 8, idlePower: 0.8, computePower: 0 },
-  cloud: { base: 22, perUnit: 2, rtt: 55, idlePower: 0.8, computePower: 0 },
+  local: {
+    baseMs: 10, perPassageMs: 28.4, rttMs: 0, bandwidthMbps: 10_000,
+    computePowerW: 2.5, idlePowerW: 0, txPowerW: 0, rxPowerW: 0,
+  },
+  edge: {
+    baseMs: 40, perPassageMs: 34.4, rttMs: 8, bandwidthMbps: 50,
+    computePowerW: 0, idlePowerW: 0.8, txPowerW: 1.3, rxPowerW: 1.0,
+  },
+  cloud: {
+    baseMs: 500, perPassageMs: 116, rttMs: 55, bandwidthMbps: 10,
+    computePowerW: 0, idlePowerW: 0.8, txPowerW: 1.3, rxPowerW: 1.0,
+  },
 } as const;
 
 const SCENARIO_DELAY: Record<string, Record<"local" | "edge" | "cloud", number>> = {
   live: { local: 0, edge: 0, cloud: 0 },
-  client_busy: { local: 500, edge: 0, cloud: 0 },
-  edge_busy: { local: 0, edge: 600, cloud: 0 },
-  client_and_edge_busy: { local: 500, edge: 600, cloud: 0 },
+  client_busy: { local: 15_000, edge: 0, cloud: 0 },
+  edge_busy: { local: 0, edge: 20_000, cloud: 0 },
+  client_and_edge_busy: { local: 15_000, edge: 20_000, cloud: 0 },
 };
+
+const REFERENCES = { latencyMs: 30_000, deviceEnergyJ: 30 };
 
 export function decideBrowserPlacement(args: {
   classification: BrowserClassification;
@@ -48,7 +60,9 @@ export function decideBrowserPlacement(args: {
   const tiers = ["local", "edge", "cloud"] as const;
   const allowed = new Set(args.classification.allowedDestinations);
   const alpha = Math.min(1, Math.max(0, args.latencyWeight));
-  const units = Math.max(1, Math.ceil(args.content.split(/\s+/).length / 120));
+  const passageCount = Math.max(1, buildSearchPassages(args.content).length);
+  const inputBytes = new TextEncoder().encode(args.content).byteLength;
+  const outputBytes = passageCount * 384 * 4;
   const delays = SCENARIO_DELAY[args.scenario] ?? SCENARIO_DELAY.live;
   const calculated = new Map<string, { latency: number; energy: number; score: number }>();
 
@@ -56,13 +70,18 @@ export function decideBrowserPlacement(args: {
     const available = tier === "local" || Boolean(args.workers[tier]?.available && args.workers[tier]?.ready);
     if (!allowed.has(tier) || !available) continue;
     const parameters = PARAMETERS[tier];
-    const processing = parameters.base + parameters.perUnit * units;
+    const processing = parameters.baseMs + parameters.perPassageMs * passageCount;
     const queue = (args.workers[tier]?.queue_depth ?? 0) * processing + delays[tier];
-    const latency = parameters.rtt + processing + queue;
+    const transferUp = tier === "local" ? 0 : inputBytes * 8 / (parameters.bandwidthMbps * 1000);
+    const transferDown = tier === "local" ? 0 : outputBytes * 8 / (parameters.bandwidthMbps * 1000);
+    const latency = parameters.rttMs + transferUp + processing + queue + transferDown;
     const energy = tier === "local"
-      ? parameters.computePower * processing / 1000
-      : parameters.idlePower * (processing + queue) / 1000 + 0.004;
-    const score = alpha * Math.min(latency / 1000, 2) + (1 - alpha) * Math.min(energy / 1, 2);
+      ? parameters.computePowerW * processing / 1000
+      : parameters.txPowerW * transferUp / 1000
+        + parameters.idlePowerW * (processing + queue) / 1000
+        + parameters.rxPowerW * transferDown / 1000;
+    const score = alpha * Math.min(latency / REFERENCES.latencyMs, 2)
+      + (1 - alpha) * Math.min(energy / REFERENCES.deviceEnergyJ, 2);
     calculated.set(tier, { latency, energy, score });
   }
 

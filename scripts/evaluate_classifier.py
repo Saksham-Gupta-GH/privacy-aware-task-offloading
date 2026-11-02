@@ -16,10 +16,12 @@ from privacydrive.classifier import PrivacyClassifier  # noqa: E402
 
 MANIFEST = ROOT / "data" / "synthetic" / "manifest.json"
 DOCUMENTS = MANIFEST.parent / "documents"
+ADVERSARIAL_CASES = MANIFEST.parent / "privacy-adversarial-cases.json"
 
 
 def main() -> None:
     cases = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    cases.extend(json.loads(ADVERSARIAL_CASES.read_text(encoding="utf-8")))
     classifier = PrivacyClassifier()
     confusion: Counter[tuple[str, str]] = Counter()
     uncertain_count = 0
@@ -29,7 +31,9 @@ def main() -> None:
     print("case                         expected     predicted    result")
     print("-" * 68)
     for case in cases:
-        text = (DOCUMENTS / case["file"]).read_text(encoding="utf-8")
+        text = case.get("content")
+        if text is None:
+            text = (DOCUMENTS / case["file"]).read_text(encoding="utf-8")
         predicted = classifier.classify(text).sensitivity
         expected = case["expected"]
         confusion[(expected, predicted)] += 1
@@ -42,6 +46,9 @@ def main() -> None:
     print()
     print(f"Accuracy: {correct}/{total} ({correct / total:.1%})")
     print(f"Uncertain rate: {uncertain_count}/{total} ({uncertain_count / total:.1%})")
+    print("Confusion counts:")
+    for (expected, predicted), count in sorted(confusion.items()):
+        print(f"  expected={expected:<10} predicted={predicted:<10} count={count}")
     if correct != total:
         raise SystemExit(1)
 

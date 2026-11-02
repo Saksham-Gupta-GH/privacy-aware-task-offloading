@@ -1,13 +1,57 @@
 {
   "schema_version": 1,
   "calibration_version": "calibration-v2",
-  "scenario": "live all-ready worker state",
+  "alpha_sweep_scenario": "live all-ready worker state",
+  "baseline_scenario": "client_busy: 15000 ms simulated local queue delay; all workers ready",
   "documents": [
     "public_event.txt",
     "public_contact.txt",
     "personal_contacts.txt",
     "restricted_payment.txt",
     "restricted_health.txt"
+  ],
+  "baseline_comparison": [
+    {
+      "strategy": "privacy_aware",
+      "tasks": 5,
+      "average_predicted_latency_ms": 7061.536,
+      "average_estimated_device_energy_j": 1.4711,
+      "policy_violations": 0,
+      "tier_counts": {
+        "edge": 3,
+        "local": 2
+      }
+    },
+    {
+      "strategy": "always_local",
+      "tasks": 5,
+      "average_predicted_latency_ms": 15918.8,
+      "average_estimated_device_energy_j": 2.297,
+      "policy_violations": 0,
+      "tier_counts": {
+        "local": 5
+      }
+    },
+    {
+      "strategy": "always_cloud",
+      "tasks": 5,
+      "average_predicted_latency_ms": 4306.454,
+      "average_estimated_device_energy_j": 3.4091,
+      "policy_violations": 3,
+      "tier_counts": {
+        "cloud": 5
+      }
+    },
+    {
+      "strategy": "latency_only",
+      "tasks": 5,
+      "average_predicted_latency_ms": 1156.692,
+      "average_estimated_device_energy_j": 0.9205,
+      "policy_violations": 2,
+      "tier_counts": {
+        "edge": 5
+      }
+    }
   ],
   "alpha_sweep": [
     {

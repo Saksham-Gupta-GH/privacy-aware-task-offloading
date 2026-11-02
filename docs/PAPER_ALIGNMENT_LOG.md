@@ -275,3 +275,183 @@ authorized and implemented in A005; the other suggestions remain unimplemented.
   - 42 of 42 frontend vitest tests passed.
   - 25 of 25 Python pytest tests passed (with added job posting test fixture).
   - Production frontend bundle rebuilt successfully.
+
+## A009 - LaTeX paper evidence and implementation alignment pass
+
+- Date: 2026-11-03. Status: paper-only correction; implementation unchanged.
+  User authorized step-by-step strengthening for the IA3 submission.
+- Paper sections: Abstract, III, VII--XIV and the architecture/scheduler figures.
+- Corrected pre-existing evidence mismatches: the client testbed specification now
+  matches the recorded 8 GB macOS 14.4.1 system; client/edge PyTorch measurements
+  are distinguished from the Azure ONNX worker; unmeasured, linearly extrapolated
+  128-passage client/edge values are now N/A; simulated predicted latency and
+  model-estimated energy are labelled as such.
+- Corrected unsupported security wording: receipts are no longer described as
+  cryptographically signed; they are trace records containing SHA-256 output
+  digests. Unconditional "zero leakage" and privacy-guarantee language was replaced
+  with evaluated policy-violation results and enforcement conditional on the
+  classifier label, policy and threat assumptions. The unverified gateway peak-RSS
+  value below 30 MB was removed while retaining the implemented memory cap.
+- Classifier result scope: 11/11 is now identified as a curated synthetic policy
+  test, not a real-world accuracy estimate. The two expected Uncertain cases and
+  the specific masked payment-card evidence test remain reported.
+- Summarization alignment: VIII-C now describes the active generalized structured
+  pipeline from A008, including source units, normalized centroid, 0.70/0.30 base
+  MMR, metric/coverage/saturation heuristics, two-pass selection, word budgeting,
+  deduplication and structural fallback. The paper no longer claims strictly
+  verbatim complete sentences or compilation of Sentence-Transformers itself.
+- Files: `docs/paper.tex`, `docs/PAPER_ALIGNMENT_LOG.md`.
+- Validation: source-to-evidence review against `validation/RESULTS.md`, raw JSON
+  benchmark artifacts, classifier tests, scheduler experiment output and active
+  TypeScript implementation. No production code, deployment, model or measured
+  result changed. LaTeX rendering remains to be performed in an environment with
+  a TeX toolchain.
+- Remaining paper action: create a saved reproducible artifact for every baseline
+  row, expand classifier evaluation if time permits, and render/review the PDF.
+- User notification: the planned paper-only alignment pass was announced before
+  editing; final results reported after validation.
+
+## A010 - Reproducible four-strategy scheduler evaluation
+
+- Date: 2026-11-03. Status: evaluation tooling and evidence updated; production
+  optimizer and website behavior unchanged.
+- Paper sections: VI, VII, X and the scheduler comparison table.
+- Previous evidence: the saved JSON contained the proposed optimizer's live alpha
+  and power sweeps, while the paper's Always-Cloud and Latency-Only values were not
+  emitted by the reproducible script. Several printed power and normalization
+  constants also differed from calibration-v2.
+- New evidence: `scripts/run_scheduler_experiments.py` evaluates Privacy-Aware,
+  Always-Local, Always-Cloud and Latency-Only on the same five documents and worker
+  state, recording latency, energy, violation count and selected-tier counts. The
+  baseline scenario explicitly applies the existing 15,000 ms `client_busy` local
+  queue delay. Live alpha and ±30% power sweeps remain separate and unchanged.
+- Paper correction: the table now uses the generated baseline values; latency is
+  labelled predicted, energy model-estimated, and the queue delay is disclosed.
+  Energy and normalization parameters now match calibration-v2.
+- Files: `scripts/run_scheduler_experiments.py`,
+  `validation/results/scheduler-experiments.json`, `validation/RESULTS.md`,
+  `docs/paper.tex`, `docs/PAPER_ALIGNMENT_LOG.md`.
+- Validation: the script completed successfully, produced zero proposed violations,
+  three Always-Cloud violations and two Latency-Only violations, and `git diff
+  --check` passed. This is a calibrated simulation, not a new physical benchmark.
+- Remaining limitation: the production browser contains a separate simplified
+  placement parameter set; alignment of browser and Python calibration is pending
+  and no claim of numerical browser/Python identity is made here.
+- User notification: announced before the reproducibility change and numerical
+  correction.
+
+## A011 - Browser scheduler aligned with calibration-v2
+
+- Date: 2026-11-03. Status: implemented locally; deployment pending.
+- Paper sections: VI--VII (latency, energy and constrained optimizer), X
+  (calibrated evaluation).
+- Previous behavior: the browser used a separate simplified parameter set,
+  omitted payload transfer time, normalized by 1,000 ms and 1 J, and represented
+  busy scenarios with 500/600 ms delays. Python evaluation used calibration-v2,
+  transfer terms, 30,000 ms/30 J references and 15,000/20,000 ms scenario delays.
+- New behavior: browser placement uses calibration-v2 processing, RTT, bandwidth,
+  power, queue-delay and normalization values. Passage count comes from the active
+  110-word overlapping indexing chunks; UTF-8 input and 384-float output sizes feed
+  the same transfer formulas as Python. Privacy admission and availability checks
+  remain unchanged.
+- Files: `frontend/src/browser/scheduler.ts`,
+  `frontend/src/browser/scheduler.test.ts`, `docs/PAPER_ALIGNMENT_LOG.md`.
+- Validation: a new regression test checks the one-passage local prediction
+  (38.4 ms, 0.096 J); all 45 frontend tests passed and the TypeScript/Vite
+  production build completed. Existing selection tests cover Restricted local-only behavior,
+  public Cloud selection under combined contention and offline Edge handling.
+- Impact: displayed predictions and some tier decisions can change because the UI
+  now uses the paper's calibrated model rather than demo-only constants. This is an
+  intended alignment, not a new physical benchmark. Production remains unchanged
+  until the rebuilt frontend is deployed.
+- User notification: the behavior change and expected decision impact were
+  announced before implementation.
+
+## A012 - Browser and gateway privacy-rule parity
+
+- Date: 2026-11-03. Status: implemented locally; deployment pending.
+- Paper sections: V (privacy classification), III-B (dual-gate verification),
+  XII (rule-based limitations).
+- Previous behavior: the browser used a shortened early-return rule chain while
+  the authoritative Python classifier used signal collection, Luhn validation,
+  local public-contact context, order/reference exclusions and restrictive-class
+  precedence. The gateway remained safe by rejecting label mismatches, but valid
+  browser requests could fail unexpectedly.
+- New behavior: TypeScript now mirrors the Python classifier's decision semantics:
+  Luhn plus payment context, order exclusions, ambiguous long-number fallback,
+  nearby public-contact markers, explicit personal markers, linked health data,
+  and Restricted > Uncertain > Personal > Public precedence. Classification still
+  runs locally before offloading and remains deterministic and explainable.
+- Files: `frontend/src/browser/privacy.ts`, `privacy.test.ts`,
+  `docs/PAPER_ALIGNMENT_LOG.md`.
+- Validation: added hard-negative order ID, ambiguous number, mixed-sensitivity and
+  public-directory tests in addition to the existing payment, public, personal and
+  empty-input cases. All 50 frontend tests passed and the TypeScript/Vite production
+  build completed.
+- Limitations: this is stronger rule parity, not a learned privacy classifier and
+  not evidence of general real-world accuracy. Gateway reclassification remains a
+  deliberate independent enforcement boundary.
+- User notification: the mismatch and privacy-first reason for resolving it before
+  adding ML were announced before implementation.
+
+## A013 - Expanded cross-runtime privacy policy benchmark
+
+- Date: 2026-11-03. Status: evaluation evidence expanded; classifier model and
+  production policy unchanged beyond the parity work in A012.
+- Paper sections: Abstract and X-A (privacy classifier policy test).
+- Previous evidence: 11 synthetic cases, including two expected Uncertain cases.
+- New evidence: 20 additional adversarial synthetic cases cover public contact
+  context, order/tracking hard negatives, general health prose, personal markers,
+  two Luhn-valid test-card formats, invalid/repeated/unlabelled long numbers,
+  identified medical data, confidentiality markers and restrictive precedence.
+  The combined distribution is 9 Public, 5 Personal, 12 Restricted and 5
+  Uncertain cases.
+- Cross-runtime result: Python and TypeScript produced all 31 expected labels;
+  Uncertain rate was 5/31 (16.1%). The evaluation script now prints confusion
+  counts, and both runtimes consume the same additional JSON fixture.
+- Files: `data/synthetic/privacy-adversarial-cases.json`,
+  `scripts/evaluate_classifier.py`, `tests/test_classifier.py`,
+  `frontend/src/browser/privacy.test.ts`, `docs/paper.tex`,
+  `docs/PAPER_ALIGNMENT_LOG.md`.
+- Validation: classifier evaluation reported 31/31; six Python classifier tests
+  passed; all 50 frontend tests passed; the production build and `git diff
+  --check` passed.
+- Limitation: the test set is intentionally curated and synthetic, so 31/31 must
+  not be presented as real-world accuracy, robustness to multilingual data, or
+  machine-learning generalization. The paper states this limitation explicitly.
+- User notification: the evaluation-first approach was announced before expansion.
+
+## A014 - Related-work bibliographic corrections
+
+- Date: 2026-11-03. Status: paper-only factual correction.
+- Paper section: II-B and bibliography entries `gao2024` and `xu2023`.
+- Previous text: the improved DDPG paper was attributed to Gao, Chen and Ding in
+  FGCS volume 158, pages 112--124; the Xu service-caching work was listed as a
+  2023 IEEE Transactions on Mobile Computing article.
+- Corrected evidence: the DDPG article is by H. Zhang, L. Cao, N. Kumar, J. Zhang,
+  P. Zhang and J. Wang, FGCS volume 159, pages 522--532, DOI
+  10.1016/j.future.2024.05.018. The Xu work appeared at IEEE INFOCOM 2018,
+  pages 207--215, DOI 10.1109/INFOCOM.2018.8485977.
+- Files: `docs/paper.tex`, `docs/PAPER_ALIGNMENT_LOG.md`.
+- Validation: checked against the publishers' indexed article metadata and the
+  IEEE conference record. No implementation or experimental result changed.
+- User notification: the two incorrect records were reported before correction.
+
+## A015 - Final LaTeX compilation and layout verification
+
+- Date: 2026-11-03. Status: paper source corrected and final PDF generated locally.
+- Paper section: VII-A, equation (6), plus whole-document visual inspection.
+- Finding: the single-line feasible-set equation exceeded the IEEE column width by
+  approximately 63 pt and visibly overlapped the adjacent column.
+- Correction: equation (6) now uses a two-line aligned layout without changing its
+  mathematical definition.
+- Validation: Tectonic 0.17.0 compiled the paper successfully to an eight-page,
+  letter-sized PDF. All pages were rendered with Poppler and inspected as a contact
+  sheet; the corrected fifth page was also inspected at higher resolution. No text,
+  figure, table or equation clipping remains. Minor non-blocking TeX underfull and
+  small title/paragraph overfull warnings remain without visible overlap.
+- Outputs: final PDF under `output/pdf/` and self-contained LaTeX source ZIP under
+  `submission/`; both generated directories are intentionally ignored by Git.
+- Files: `docs/paper.tex`, `.gitignore`, `docs/PAPER_ALIGNMENT_LOG.md`.
+- User notification: the visible equation defect and its correction were reported
+  during the render-and-review workflow.

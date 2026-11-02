@@ -119,3 +119,22 @@ tasks stay local (1,061.536 ms, 1.4711 J average). With latency weight 1.0, all 
 select local (918.800 ms, 2.2970 J). Scaling power parameters by ±30% at weight 0.65
 changes estimated energy to 1.0298–1.9125 J but does not change any placement. See
 `results/scheduler-experiments.json`.
+
+## Reproducible scheduler baseline comparison
+
+The same result artifact now records all four strategies over the same five classified
+tasks. In the declared `client_busy` stress scenario, every worker is ready and the
+local tier receives a simulated 15,000 ms queue delay. Latency and energy are model
+outputs from calibration-v2; they are not direct end-to-end or power-meter readings.
+
+| Strategy | Policy violations | Average predicted latency | Average estimated client energy | Selected tiers |
+|---|---:|---:|---:|---|
+| Privacy-aware | 0/5 | 7,061.536 ms | 1.4711 J | Edge 3, Local 2 |
+| Always-local | 0/5 | 15,918.800 ms | 2.2970 J | Local 5 |
+| Always-cloud | 3/5 | 4,306.454 ms | 3.4091 J | Cloud 5 |
+| Latency-only | 2/5 | 1,156.692 ms | 0.9205 J | Edge 5 |
+
+The privacy-aware strategy reduces estimated client energy by 35.9% relative to
+always-local in this scenario, while retaining the two Restricted tasks locally.
+Always-cloud violates the policy for three Personal/Restricted tasks; latency-only
+selects edge for every task and violates the two Restricted cases.
