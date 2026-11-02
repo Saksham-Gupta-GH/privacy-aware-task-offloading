@@ -22,6 +22,7 @@ export type BrowserDocument = {
   receipt?: Record<string, unknown>;
   searchPassages?: Array<{ text: string; embedding: number[] }>;
   embeddingModel?: "all-MiniLM-L6-v2";
+  searchIndexVersion?: 2;
 };
 
 export type BrowserSearchResult = {

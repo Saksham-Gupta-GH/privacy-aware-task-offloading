@@ -3,7 +3,7 @@ import { readDocumentLocally } from "./files";
 import { createSearchIndex, embedTexts, summarizeWithMiniLM } from "./ml";
 import { classifyInBrowser } from "./privacy";
 import { BrowserPlacement, BrowserWorker, decideBrowserPlacement } from "./scheduler";
-import { calibrateScore, dot } from "./semantic";
+import { rankHybridSearch } from "./semantic";
 import { claimLegacyBrowserDocuments, listBrowserDocuments, removeBrowserDocument, saveBrowserDocument } from "./storage";
 import { summarizeStructured } from "./structured-summary";
 import { SummaryPanel } from "./SummaryPanel";
@@ -173,7 +173,7 @@ export function BrowserWorkspace({ workers, page, token, userId, onOpenFile }: {
   };
 
   const prepareSearch = async () => {
-    const unindexed = documents.filter((document) => !document.searchPassages?.length);
+    const unindexed = documents.filter((document) => !document.searchPassages?.length || document.searchIndexVersion !== 2);
     if (!unindexed.length) return;
     setProcessing(true); setError("");
     try {
@@ -183,6 +183,7 @@ export function BrowserWorkspace({ workers, page, token, userId, onOpenFile }: {
           ...document,
           searchPassages,
           embeddingModel: "all-MiniLM-L6-v2",
+          searchIndexVersion: 2,
           receipt: document.receipt,
         }, userId);
       }
@@ -196,7 +197,7 @@ export function BrowserWorkspace({ workers, page, token, userId, onOpenFile }: {
 
   const searchLocally = async () => {
     if (!query.trim()) return;
-    const indexed = documents.filter((document) => document.searchPassages?.length);
+    const indexed = documents.filter((document) => document.searchPassages?.length && document.searchIndexVersion === 2);
     if (!indexed.length) {
       setError("Prepare search before searching.");
       return;
@@ -204,23 +205,20 @@ export function BrowserWorkspace({ workers, page, token, userId, onOpenFile }: {
     setProcessing(true); setError("");
     try {
       const [queryVector] = await embedTexts([query.trim()]);
-      const results = indexed.map((document): BrowserSearchResult => {
-        const matches = document.searchPassages!.map((passage) => {
-          const rawCosine = dot(queryVector, passage.embedding);
-          const calibrated = calibrateScore(rawCosine, query.trim(), passage.text);
-          return {
-            passage: passage.text,
-            score: calibrated,
-          };
-        }).sort((left, right) => right.score - left.score);
+      const ranked = rankHybridSearch(query.trim(), queryVector, indexed.map((document) => ({
+        id: document.id,
+        name: document.name,
+        passages: document.searchPassages!,
+      })));
+      const byId = new Map(indexed.map((document) => [document.id, document]));
+      const results = ranked.map((result): BrowserSearchResult => {
+        const document = byId.get(result.documentId)!;
         return {
-          documentId: document.id,
+          ...result,
           name: document.name,
           sensitivity: document.classification.sensitivity,
-          score: matches[0].score,
-          matchingPassage: matches[0].passage,
         };
-      }).sort((left, right) => right.score - left.score);
+      });
       setSearchResults(results.slice(0, 6));
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Local semantic search failed");
@@ -246,7 +244,7 @@ export function BrowserWorkspace({ workers, page, token, userId, onOpenFile }: {
     setSelectedId(`demo-${userId}-0`);
   };
 
-  const indexedCount = documents.filter((document) => document.searchPassages?.length).length;
+  const indexedCount = documents.filter((document) => document.searchPassages?.length && document.searchIndexVersion === 2).length;
 
   const remove = async () => {
     if (!selected) return;
