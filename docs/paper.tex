@@ -59,8 +59,7 @@
 
 \begin{document}
 
-\title{PrivacyDrive: A Privacy-Aware Task Offloading Framework\\
-for Mobile Edge Computing}
+\title{Privacy-Aware Task Offloading in Mobile Edge Computing}
 
 \author{
   Saksham Gupta$^{1}$, Devesh Gautam$^{1}$, Ridhima Verma$^{1}$, Mohammad Hamza Alam$^{1}$\\[3pt]
@@ -75,13 +74,13 @@ for Mobile Edge Computing}
 Mobile Edge Computing (MEC) enables resource-constrained mobile and browser clients to offload computationally intensive tasks to nearby edge servers or remote cloud datacenters.
 However, conventional offloading schedulers treat data privacy as a soft cost penalty or neglect it entirely.
 As a consequence, sensitive documents containing personal identity details, financial records, or medical information can be dispatched to untrusted remote machines whenever network latency appears favorable.
-In this paper, we propose \textbf{PrivacyDrive}, a three-tier task offloading framework that establishes data privacy as a strict, non-negotiable admission constraint prior to any latency or energy optimization.
+In this paper, we propose a three-tier privacy-aware task offloading framework that establishes data privacy as a strict, non-negotiable admission constraint prior to any latency or energy optimization.
 The framework categorizes incoming documents into four deterministic sensitivity levels (Public, Personal, Restricted, and Uncertain) and filters the feasible execution candidate set accordingly.
 Surviving tiers are then evaluated using a multi-objective cost optimizer that balances predicted completion time, client battery energy, live worker availability, and task deadlines.
-For restricted tasks that cannot leave the client, PrivacyDrive executes an in-browser neural pipeline using quantized \texttt{all-MiniLM-L6-v2} (ONNX q4) over WebAssembly, delivering local semantic vector search and Maximal Marginal Relevance (MMR) extractive summarization with zero network transmission.
-We implemented and deployed PrivacyDrive across a physical testbed comprising an Apple M1 client, an AMD Ryzen 5 edge laptop, and an Azure cloud virtual machine.
+For restricted tasks that cannot leave the client, the framework executes an in-browser neural pipeline using quantized \texttt{all-MiniLM-L6-v2} (ONNX q4) over WebAssembly, delivering local semantic vector search and Maximal Marginal Relevance (MMR) extractive summarization with zero network transmission.
+We implemented and deployed the proposed framework across a physical testbed comprising an Apple M1 client, an AMD Ryzen 5 edge laptop, and an Azure cloud virtual machine.
 Across 11 benchmark test documents, the privacy engine achieved 100\% policy compliance with zero data leaks.
-Under simulated client queue pressure, conventional always-cloud and latency-only policies produced three and two severe privacy violations, respectively, whereas PrivacyDrive achieved zero violations and cut client device energy consumption by 35.9\% relative to always-local execution.
+Under simulated client queue pressure, conventional always-cloud and latency-only policies produced three and two severe privacy violations, respectively, whereas the proposed framework achieved zero violations and cut client device energy consumption by 35.9\% relative to always-local execution.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -123,16 +122,16 @@ Such decisions represent severe privacy violations regardless of how quickly the
   \draw[arrow] (step3) -- (dispatch);
 \end{tikzpicture}%
 }
-\caption{The core scheduling paradigm of PrivacyDrive. Privacy is enforced as an upstream boolean admission gate before numerical latency and energy optimization occurs.}
+\caption{The core scheduling paradigm of the proposed framework. Privacy is enforced as an upstream boolean admission gate before numerical latency and energy optimization occurs.}
 \label{fig:paradigm}
 \end{figure}
 
-To address this challenge, we design and implement \textbf{PrivacyDrive}, a privacy-first task offloading framework depicted in Fig.~\ref{fig:paradigm}.
-PrivacyDrive treats data privacy as a strict, non-negotiable admission requirement rather than a flexible cost term.
+To address this challenge, we design and implement a privacy-first task offloading framework depicted in Fig.~\ref{fig:paradigm}.
+The proposed framework treats data privacy as a strict, non-negotiable admission requirement rather than a flexible cost term.
 Each task is first inspected by an explainable, deterministic privacy classifier running on the client.
 Only destinations that satisfy the document's privacy tier are admitted to the optimization pool.
 Once admitted, the optimizer selects the best tier based on calibrated response times, estimated device battery drain, worker readiness, and deadlines.
-Furthermore, for documents that must never leave the client, PrivacyDrive incorporates a client-side WebAssembly Transformer runtime that performs local semantic embedding and summarization with zero network communication.
+Furthermore, for documents that must never leave the client, our framework incorporates a client-side WebAssembly Transformer runtime that performs local semantic embedding and summarization with zero network communication.
 
 The primary contributions of this paper are:
 \begin{enumerate}
@@ -160,7 +159,7 @@ The fundamental drawback of this soft formulation is that whenever latency or en
 Gao et al.\ proposed an improved Deep Deterministic Policy Gradient (DDPG) reinforcement learning algorithm to protect privacy sensitivity levels during offloading~\cite{gao2024}.
 While adaptive, deep reinforcement learning policies operate as black boxes, making it difficult for users or system administrators to verify why a particular document was sent to a given destination.
 Xu et al.\ studied joint service caching and task offloading in dense cellular networks, focusing on edge resource allocation without hard privacy boundaries~\cite{xu2023}.
-PrivacyDrive differs from these approaches by treating privacy as a boolean constraint that strictly prunes ineligible tiers before cost optimization takes place.
+Our framework differs from these approaches by treating privacy as a boolean constraint that strictly prunes ineligible tiers before cost optimization takes place.
 
 \subsection{Edge Intelligence and In-Browser Inference}
 Recent developments in WebAssembly (WASM) and ONNX Runtime Web have made it feasible to run neural networks directly inside web browsers~\cite{onnxweb}.
@@ -172,7 +171,7 @@ In our work, we leverage these advancements to deploy quantized \texttt{all-Mini
 %% ─── III. SYSTEM ARCHITECTURE ────────────────────────────────────────────────
 \section{System Architecture}
 
-PrivacyDrive consists of three decoupled layers: the client workspace, the public gateway, and the execution workers, as illustrated in Fig.~\ref{fig:arch}.
+The proposed system architecture consists of three decoupled layers: the client workspace, the public gateway, and the execution workers, as illustrated in Fig.~\ref{fig:arch}.
 
 \begin{figure*}[t]
 \centering
@@ -232,7 +231,7 @@ PrivacyDrive consists of three decoupled layers: the client workspace, the publi
 
 \end{tikzpicture}%
 }
-\caption{Three-tier system architecture of PrivacyDrive. Sensitive documents (Restricted and Uncertain) are locked to the local client and processed via in-browser WebAssembly neural inference. Public tasks are transmitted over HTTPS through the memory-capped Azure public gateway to the edge or cloud worker.}
+\caption{Three-tier system architecture of the proposed framework. Sensitive documents (Restricted and Uncertain) are locked to the local client and processed via in-browser WebAssembly neural inference. Public tasks are transmitted over HTTPS through the memory-capped Azure public gateway to the edge or cloud worker.}
 \label{fig:arch}
 \end{figure*}
 
@@ -244,7 +243,7 @@ All document contents and generated vector indices reside in the browser's Index
 No unencrypted or sensitive payload ever crosses the network boundary.
 
 \subsection{Azure Public Gateway}
-To bridge serverless web clients with remote execution backends, we developed a lightweight gateway service (\texttt{privacydrive.public\_gateway}).
+To bridge serverless web clients with remote execution backends, we developed a lightweight gateway service (\texttt{public\_gateway.py}).
 Deploying monolithic frameworks like PyTorch or full sentence-transformers on low-cost burstable cloud VMs often triggers kernel out-of-memory (OOM) faults.
 To prevent this, the gateway deliberately avoids importing numerical computing libraries, maintaining a peak memory footprint below 30~MB.
 The gateway performs two critical tasks:
@@ -256,7 +255,7 @@ The gateway performs two critical tasks:
 \subsection{Edge and Cloud Workers}
 The edge worker runs on a trusted AMD Ryzen 5 laptop connected to the gateway via a secure reverse SSH tunnel (\texttt{127.0.0.1:18001}).
 The cloud worker runs as a systemd service directly on the Azure VM on \texttt{127.0.0.1:8001}.
-Both workers run the identical FastAPI service (\texttt{privacydrive.worker\_api}) using ONNX Runtime with the pinned \texttt{all-MiniLM-L6-v2} model.
+Both workers run the identical FastAPI service (\texttt{worker\_api.py}) using ONNX Runtime with the pinned \texttt{all-MiniLM-L6-v2} model.
 Workers are bound exclusively to localhost and are unreachable from the public internet.
 
 %% ─── IV. THREAT MODEL AND PRIVACY POLICY ────────────────────────────────────
@@ -298,7 +297,7 @@ Network channels between client, gateway, and edge are protected using TLS 1.3 a
 %% ─── V. PRIVACY CLASSIFICATION ──────────────────────────────────────────────
 \section{Privacy Classification and Admission Control}
 
-The privacy classification engine operates deterministically using contextual regular expressions and semantic keyword heuristics, implemented identically in Python (\texttt{privacydrive.classifier}) and TypeScript (\texttt{privacy.ts}).
+The privacy classification engine operates deterministically using contextual regular expressions and semantic keyword heuristics, implemented identically in Python (\texttt{classifier.py}) and TypeScript (\texttt{privacy.ts}).
 The decision workflow is shown in Fig.~\ref{fig:classifier}.
 
 \begin{figure}[t]
@@ -459,7 +458,7 @@ The optimal placement decision is chosen as:
 %% ─── VIII. IN-BROWSER ZERO-LEAKAGE NEURAL PIPELINE ─────────────────────────
 \section{In-Browser Zero-Leakage Neural Pipeline}
 
-For confidential documents that cannot leave the device, PrivacyDrive executes complete neural embedding and summarization inside the user's browser using WebAssembly.
+For confidential documents that cannot leave the device, the proposed framework executes complete neural embedding and summarization inside the user's browser using WebAssembly.
 
 \subsection{Quantized ONNX Web Inference}
 The browser runtime loads \texttt{all-MiniLM-L6-v2} quantized to 4-bit precision (ONNX q4) via \texttt{@huggingface/transformers} and ONNX Runtime Web~\cite{onnxweb,wang2020miniLM}.
@@ -480,7 +479,7 @@ When a user submits a search query $\mathbf{q}$, it is embedded locally, and cos
 Search queries and document vectors remain strictly on the local device.
 
 \subsection{Semantic MMR Extractive Summarization}
-Rather than relying on frequency-based heuristics, PrivacyDrive implements semantic Maximal Marginal Relevance (MMR) extractive summarization~\cite{mmr1998}.
+Rather than relying on frequency-based heuristics, the framework implements semantic Maximal Marginal Relevance (MMR) extractive summarization~\cite{mmr1998}.
 The document centroid is computed as:
 \begin{equation}
   \mathbf{c} = \frac{1}{M} \sum_{m=1}^M \hat{\mathbf{s}}_m
@@ -494,7 +493,7 @@ Extracted summaries consist solely of verbatim source sentences, eliminating the
 %% ─── IX. EXPERIMENTAL SETUP ──────────────────────────────────────────────────
 \section{Experimental Setup and Hardware Testbed}
 
-We evaluated PrivacyDrive across a physical, heterogeneous testbed detailed in Table~\ref{tab:testbed}.
+We evaluated the proposed framework across a physical, heterogeneous testbed detailed in Table~\ref{tab:testbed}.
 
 \begin{table}[t]
 \caption{Physical Testbed Node Specifications}
@@ -516,7 +515,7 @@ Cloud VM      & Azure B2ats\_v2 (2 vCPU)& 1 GiB RAM     & Ubuntu 24.04 LTS \\
 All three nodes executed identical ONNX Runtime execution runtimes (version 1.19.2) pinned to \texttt{all-MiniLM-L6-v2} commit \texttt{1110a243}.
 Reported latency values represent the median of multiple warm-up runs.
 
-We benchmark PrivacyDrive against three representative offloading baseline strategies:
+We benchmark our framework against three representative offloading baseline strategies:
 \begin{itemize}
   \item \textbf{Always-Local:} Tasks always execute on the local client device regardless of workload size or queue backlog.
   \item \textbf{Always-Cloud:} Tasks are unconditionally offloaded to the public cloud server to minimize client energy consumption.
@@ -597,7 +596,7 @@ Transitioning to ONNX Runtime with a strict streaming batch size of 1 capped pea
 As presented in Table~\ref{tab:multi_tier_latency}, worker execution required 76.29~ms for single passages and 2389.97~ms for 32 passages, with corresponding end-to-end WAN latencies of 518.67~ms and 3912.63~ms.
 
 \subsection{Scheduler Comparison Under Local Queue Contention}
-We evaluated PrivacyDrive against baseline schedulers under simulated client queue pressure across five tasks spanning all sensitivity tiers.
+We evaluated the proposed framework against baseline schedulers under simulated client queue pressure across five tasks spanning all sensitivity tiers.
 Results are summarized in Table~\ref{tab:violations} and Fig.~\ref{fig:violations}.
 
 \begin{figure}[t]
@@ -608,7 +607,7 @@ Results are summarized in Table~\ref{tab:violations} and Fig.~\ref{fig:violation
   xbar, bar width=9pt,
   width=7.5cm, height=3.6cm,
   xlabel={Policy Violations Across 5 Tasks (Lower is Better)},
-  symbolic y coords={PrivacyDrive, Always-Local, Always-Cloud, Latency-Only},
+  symbolic y coords={Proposed, Always-Local, Always-Cloud, Latency-Only},
   ytick=data,
   xmin=0, xmax=3.8,
   nodes near coords,
@@ -620,7 +619,7 @@ Results are summarized in Table~\ref{tab:violations} and Fig.~\ref{fig:violation
   grid style={dashed,gray!25}
 ]
 \addplot[fill=blue!65, draw=blue!90] coordinates {
-  (0,PrivacyDrive)
+  (0,Proposed)
   (0,Always-Local)
   (3,Always-Cloud)
   (2,Latency-Only)
@@ -628,7 +627,7 @@ Results are summarized in Table~\ref{tab:violations} and Fig.~\ref{fig:violation
 \end{axis}
 \end{tikzpicture}%
 }
-\caption{Policy violations across scheduling strategies under client queue contention. PrivacyDrive and Always-Local achieve zero violations, but PrivacyDrive reduces client battery energy by 35.9\% relative to Always-Local.}
+\caption{Policy violations across scheduling strategies under client queue contention. The proposed framework and Always-Local achieve zero violations, but the proposed framework reduces client battery energy by 35.9\% relative to Always-Local.}
 \label{fig:violations}
 \end{figure}
 
@@ -641,17 +640,17 @@ Results are summarized in Table~\ref{tab:violations} and Fig.~\ref{fig:violation
 \toprule
 \textbf{Scheduling Strategy} & \textbf{Policy Violations} & \textbf{Avg.\ Latency (ms)} & \textbf{Avg.\ Energy (J)} \\
 \midrule
-\textbf{PrivacyDrive (Proposed)} & \textbf{0} (0\%) & 1061.54 & \textbf{1.471} \\
-Always-Local                     & 0 (0\%)          & 918.80  & 2.297 \\
-Always-Cloud                     & 3 (60\%)         & 642.10  & 0.985 \\
-Latency-Only                     & 2 (40\%)         & 615.40  & 0.941 \\
+\textbf{Proposed Framework}   & \textbf{0} (0\%) & 1061.54 & \textbf{1.471} \\
+Always-Local                  & 0 (0\%)          & 918.80  & 2.297 \\
+Always-Cloud                  & 3 (60\%)         & 642.10  & 0.985 \\
+Latency-Only                  & 2 (40\%)         & 615.40  & 0.941 \\
 \bottomrule
 \end{tabular}%
 }
 \end{table}
 
 While Always-Cloud and Latency-Only achieve lower execution latencies, they commit 3 and 2 severe privacy violations, respectively, dispatching personal resumes and credit card statements to the public cloud.
-PrivacyDrive achieves zero policy violations while successfully reducing client device energy from 2.297~J (Always-Local) down to 1.471~J (a 35.9\% savings), by safely dispatching public tasks to the cloud and personal tasks to the trusted edge.
+The proposed framework achieves zero policy violations while successfully reducing client device energy from 2.297~J (Always-Local) down to 1.471~J (a 35.9\% savings), by safely dispatching public tasks to the cloud and personal tasks to the trusted edge.
 
 \subsection{Sensitivity Analysis}
 Varying the latency preference parameter $\alpha$ from 0.0 to 0.75 maintained consistent tier assignments: public documents offloaded to cloud/edge, personal tasks executed at edge, and restricted tasks remained local.
@@ -661,10 +660,10 @@ Perturbing client power parameters ($P^{\text{cpu}}, P^{\text{tx}}$) by $\pm 30\
 %% ─── XI. NOVELTY AND CONTRIBUTIONS ───────────────────────────────────────────
 \section{Novelty and Contributions}
 
-The key novel aspects of PrivacyDrive can be summarized as follows:
+The key novel aspects of the proposed framework can be summarized as follows:
 \begin{enumerate}
-  \item \textbf{Decoupled Admission Architecture:} Unlike prior schemes that integrate privacy into numerical loss functions, PrivacyDrive decouples privacy verification from performance optimization, providing deterministic privacy guarantees.
-  \item \textbf{Autonomous In-Browser Neural Engine:} By compiling Sentence-Transformers into WebAssembly, PrivacyDrive allows restricted documents to receive advanced semantic search and MMR summarization locally without sending a single byte over the wire.
+  \item \textbf{Decoupled Admission Architecture:} Unlike prior schemes that integrate privacy into numerical loss functions, our approach decouples privacy verification from performance optimization, providing deterministic privacy guarantees.
+  \item \textbf{Autonomous In-Browser Neural Engine:} By compiling Sentence-Transformers into WebAssembly, our system allows restricted documents to receive advanced semantic search and MMR summarization locally without sending a single byte over the wire.
   \item \textbf{Lightweight Dual-Gate Verification:} The memory-capped Azure public gateway independently re-checks privacy classifications, preventing modified or malicious web clients from bypassing offloading policies.
   \item \textbf{Load-Contingent Offloading Evidence:} Our physical benchmarks provide empirical proof that modern client processors outpace low-power edge nodes at idle, validating that task offloading must be dynamically driven by queue contention rather than static tier hierarchy.
 \end{enumerate}
@@ -693,9 +692,9 @@ Future development will focus on three key directions:
 %% ─── XIV. CONCLUSION ─────────────────────────────────────────────────────────
 \section{Conclusion}
 
-In this paper, we presented PrivacyDrive, a privacy-aware task offloading framework for mobile edge computing.
-By enforcing privacy classification as an upstream boolean admission gate prior to multi-objective cost optimization, PrivacyDrive guarantees that sensitive personal and restricted data is never dispatched to untrusted remote environments.
-For tasks that must stay local, PrivacyDrive provides full semantic search and extractive MMR summarization directly inside the browser using WebAssembly neural inference.
+In this paper, we presented a privacy-aware task offloading framework for mobile edge computing.
+By enforcing privacy classification as an upstream boolean admission gate prior to multi-objective cost optimization, the framework guarantees that sensitive personal and restricted data is never dispatched to untrusted remote environments.
+For tasks that must stay local, the framework provides full semantic search and extractive MMR summarization directly inside the browser using WebAssembly neural inference.
 Physical experiments across an Apple M1 client, an AMD Ryzen 5 edge laptop, and an Azure cloud VM demonstrated 100\% privacy compliance with zero policy violations, while reducing client device energy by 35.9\% under queue contention relative to always-local execution.
 Our findings confirm that strict privacy guarantees can be harmoniously integrated into edge-cloud task scheduling without compromising performance or transparency.
 

@@ -69,8 +69,22 @@ export const IconGitHub: React.FC<IconProps> = ({ size = 16, className = "", sty
 
 export const IconBrandLogo: React.FC<{ size?: number; className?: string }> = ({ size = 28, className = "" }) => (
   <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className} aria-hidden="true">
-    <rect width="32" height="32" rx="8" fill="#059669" />
-    <path d="M9 18a4 4 0 0 1 3.5-3.94A4.5 4.5 0 0 1 21 13a3.5 3.5 0 0 1 3.5 3.5c0 1.93-1.57 3.5-3.5 3.5H11a3 3 0 0 1-2-3" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M16 14v8M13 19l3 3 3-3" stroke="#a7f3d0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <defs>
+      <linearGradient id="logoBg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#285430" />
+        <stop offset="100%" stopColor="#1e3f24" />
+      </linearGradient>
+    </defs>
+    <rect width="32" height="32" rx="8" fill="url(#logoBg)" />
+    {/* Cloud body */}
+    <path
+      d="M9.5 18.5a3.5 3.5 0 0 1 3.2-3.46A4.5 4.5 0 0 1 21.2 14a3.3 3.3 0 0 1 3.3 3.3c0 1.82-1.48 3.2-3.3 3.2H11a3.5 3.5 0 0 1-1.5-.34"
+      stroke="#ffffff"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* Downward routing arrow with autumn gold accent */}
+    <path d="M16 14.5v7M13.5 19l2.5 2.5 2.5-2.5" stroke="#fcd34d" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );

@@ -449,7 +449,7 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
                   {busy ? "Evaluating & Processing…" : "Evaluate & Offload Task →"}
                 </button>
                 <button className="google-pill-btn secondary full" disabled={busy} onClick={indexSelected}>
-                  <span>⌁</span> {selected.searchPassages?.length ? "Refresh Vector Index" : "Prepare for Smart Search"}
+                  <IconBolt size={14} /> {selected.searchPassages?.length ? "Refresh Vector Index" : "Prepare for Smart Search"}
                 </button>
                 <button
                   className={deleteArmed ? "google-danger-btn confirm" : "google-danger-btn"}
