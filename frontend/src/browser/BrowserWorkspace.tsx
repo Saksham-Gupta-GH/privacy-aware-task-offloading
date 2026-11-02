@@ -281,39 +281,7 @@ export function BrowserWorkspace({ workers }: { workers: Record<string, BrowserW
           <h1>Policy management</h1>
           <p>Review and enforce privacy-aware offloading rules across Local, Edge, and Cloud tiers.</p>
         </div>
-        <div className="workspace-admin-badge">
-          <span>Demo workspace · Administrator</span>
-        </div>
-      </section>
-
-      {/* MoveInSync-Style Filter & Action Strip */}
-      <section className="moveinsync-filter-strip">
-        <div className="filter-left-group">
-          <span className="filter-label">View policies for</span>
-          <div className="filter-select-wrapper">
-            <select value={scenario} onChange={(event) => setScenario(event.target.value)}>
-              <option value="live">Live Worker State</option>
-              <option value="client_busy">Simulated: Client Busy (Queue Contention)</option>
-              <option value="edge_busy">Simulated: Edge Busy</option>
-              <option value="client_and_edge_busy">Simulated: Client + Edge Busy</option>
-            </select>
-          </div>
-          <span className="filter-slash">/</span>
-          <div className="filter-select-wrapper">
-            <select value={latencyWeight} onChange={(event) => setLatencyWeight(Number(event.target.value))}>
-              <option value={65}>Goal: 65% Latency · 35% Energy</option>
-              <option value={100}>Goal: 100% Latency (Fastest)</option>
-              <option value={0}>Goal: 100% Battery Preservation</option>
-              <option value={50}>Goal: Balanced (50% / 50%)</option>
-            </select>
-          </div>
-          <span className="filter-slash">/</span>
-          <div className="filter-select-wrapper">
-            <span className="filter-static-item">All Classifications</span>
-          </div>
-        </div>
-
-        <div className="filter-right-actions">
+        <div className="title-right-actions">
           <button className="moveinsync-btn-demo" onClick={loadDemoSet} title="Load fictional documents for testing">
             <IconSparkle size={14} /> Demo tools
           </button>

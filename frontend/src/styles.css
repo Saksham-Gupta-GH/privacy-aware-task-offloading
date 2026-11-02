@@ -211,10 +211,16 @@ button { cursor: pointer; }
 /* MoveInSync Page Title Section */
 .moveinsync-title-section {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 22px;
+  margin-bottom: 24px;
+}
+
+.title-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .title-text-block h1 {

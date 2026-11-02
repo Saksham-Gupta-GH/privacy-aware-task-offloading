@@ -52,11 +52,6 @@ function App() {
             </div>
           </div>
 
-          <nav className="header-nav-center">
-            <span className="nav-item active">Offloading Policies</span>
-            <span className="nav-item">Service Status</span>
-          </nav>
-
           <div className="header-right-group">
             <div className="stream-live-pill">
               <span className="live-dot" />
