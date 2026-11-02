@@ -68,7 +68,8 @@ class BrowserSummaryRequest(BaseModel):
     content: str = Field(min_length=1, max_length=1_000_000)
     selected_tier: Literal["edge", "cloud"]
     reported_sensitivity: str
-    sentence_count: int = Field(default=3, ge=1, le=10)
+    sentence_count: int = Field(default=3, ge=1, le=10, deprecated=True, description="Legacy field; structured summaries use word_budget.")
+    word_budget: int = Field(default=180, ge=20, le=500)
 
 
 classifier = PrivacyClassifier()
@@ -181,6 +182,7 @@ async def browser_summarize(
                     "document_id": request.document_id,
                     "content": request.content,
                     "sentence_count": request.sentence_count,
+                    "word_budget": request.word_budget,
                     "privacy_label": verified.sensitivity,
                     "policy_version": verified.policy_version,
                 },

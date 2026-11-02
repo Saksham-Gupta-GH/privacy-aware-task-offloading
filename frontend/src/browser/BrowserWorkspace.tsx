@@ -5,7 +5,8 @@ import { classifyInBrowser } from "./privacy";
 import { BrowserPlacement, BrowserWorker, decideBrowserPlacement } from "./scheduler";
 import { calibrateScore, dot } from "./semantic";
 import { claimLegacyBrowserDocuments, listBrowserDocuments, removeBrowserDocument, saveBrowserDocument } from "./storage";
-import { summarizeExtractively } from "./summarize";
+import { summarizeStructured } from "./structured-summary";
+import { SummaryPanel } from "./SummaryPanel";
 import { BrowserDocument, BrowserSearchResult } from "./types";
 import {
   IconSearch,
@@ -56,6 +57,7 @@ export function BrowserWorkspace({ workers, page, token, userId, onOpenFile }: {
   const busy = readingFile || processing;
   const [latencyWeight, setLatencyWeight] = useState(65);
   const [scenario, setScenario] = useState("live");
+  const [summaryWordBudget, setSummaryWordBudget] = useState(180);
   const [decision, setDecision] = useState<BrowserPlacement | null>(null);
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<BrowserSearchResult[]>([]);
@@ -121,18 +123,19 @@ export function BrowserWorkspace({ workers, page, token, userId, onOpenFile }: {
       let summary: string;
       let receipt: Record<string, unknown>;
       if (placement.selectedTier === "local") {
-        let operation = "minilm_mmr_summary";
+        let operation = "structured_minilm_mmr_summary";
         try {
-          summary = await summarizeWithMiniLM(selected.content, 3);
+          summary = await summarizeWithMiniLM(selected.content, summaryWordBudget);
         } catch {
-          summary = summarizeExtractively(selected.content, 3);
-          operation = "frequency_fallback_summary";
+          summary = summarizeStructured(selected.content, summaryWordBudget);
+          operation = "structured_fallback_summary";
         }
         receipt = {
           receipt_id: crypto.randomUUID(),
           worker_id: "browser-local-client",
           tier: "local",
           operation,
+          word_budget: summaryWordBudget,
           processing_ms: Math.round((performance.now() - started) * 1000) / 1000,
         };
       } else {
@@ -145,7 +148,7 @@ export function BrowserWorkspace({ workers, page, token, userId, onOpenFile }: {
             content: selected.content,
             selected_tier: placement.selectedTier,
             reported_sensitivity: selected.classification.sensitivity,
-            sentence_count: 3,
+            word_budget: summaryWordBudget,
           }),
         });
         const payload = await response.json().catch(() => ({}));
@@ -258,10 +261,6 @@ export function BrowserWorkspace({ workers, page, token, userId, onOpenFile }: {
     await refresh();
   };
 
-  const summaryBullets = selected?.summary
-    ? selected.summary.split(/(?<=[.!?])\s+|\n+/).map((s) => s.replace(/^[•\s-]+/, "").trim()).filter(Boolean)
-    : [];
-
   return (
     <div className="workspace">
       {error && <div className="error-banner" role="alert">{error}<button aria-label="Dismiss" onClick={() => setError("")}>×</button></div>}
@@ -344,7 +343,13 @@ export function BrowserWorkspace({ workers, page, token, userId, onOpenFile }: {
                   </select></label>
                 </div>
                 <div className="detail-actions">
-                  <button className="button button-primary" disabled={busy} onClick={summarize}>{busy ? "Working…" : "Evaluate & summarize"}</button>
+                  <label className="summary-length">Summary length<select aria-label="Summary length" disabled={busy} value={summaryWordBudget} onChange={(event) => setSummaryWordBudget(Number(event.target.value))}>
+                    <option value={120}>Brief · up to 120 words</option>
+                    <option value={200}>Standard · up to 200 words</option>
+                    <option value={320}>Detailed · up to 320 words</option>
+                    <option value={450}>Comprehensive · up to 450 words</option>
+                  </select></label>
+                  <button className="button button-primary" disabled={busy} onClick={summarize}>{busy ? "Summarizing…" : selected.summary ? "Regenerate summary" : "Evaluate & summarize"}</button>
                   <button className="text-button danger" onClick={remove}>{deleteArmed ? "Confirm remove" : "Remove file"}</button>
                 </div>
               </>
@@ -374,11 +379,7 @@ export function BrowserWorkspace({ workers, page, token, userId, onOpenFile }: {
       )}
 
       {page === "files" && selected?.summary && (
-        <section className="panel summary-panel">
-          <div className="panel-heading"><h2>Summary</h2></div>
-          <ul>{summaryBullets.map((bullet, index) => <li key={index}><IconCheck size={15} /><span>{bullet}</span></li>)}</ul>
-          {selected.receipt && <div className="receipt-line"><span>Processed on {String(selected.receipt.worker_id ?? selected.summaryTier ?? "local")}</span><code>{String(selected.receipt.receipt_id ?? "").slice(0, 8)} · {String(selected.receipt.processing_ms ?? "—")} ms</code></div>}
-        </section>
+        <SummaryPanel key={`${selected.id}:${selected.summary}`} summary={selected.summary} filename={selected.name} receipt={selected.receipt} tier={selected.summaryTier} />
       )}
     </div>
   );

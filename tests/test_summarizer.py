@@ -1,37 +1,27 @@
+"""Tests for the shared split_sentences segmentation utility.
+
+summarize_extractively and summarize_semantically were removed in A006.
+Their tests are removed here accordingly. The active summarization path
+is covered by tests/test_structured_summary.py and test_summary_worker.py.
+"""
+
+import json
 import unittest
+from pathlib import Path
 
-import numpy as np
-
-from privacydrive.summarizer import split_sentences, summarize_extractively, summarize_semantically
+from privacydrive.summarizer import split_sentences
 
 
-class ExtractiveSummarizerTests(unittest.TestCase):
-    def test_short_text_is_not_invented(self):
-        source = "First sentence. Second sentence."
-        self.assertEqual(summarize_extractively(source, 3), source)
+class SentenceSplittingTests(unittest.TestCase):
+    def test_shared_structural_segmentation_cases(self):
+        cases = json.loads(Path(__file__).with_name("segmentation_cases.json").read_text(encoding="utf-8"))
+        for case in cases:
+            with self.subTest(case=case["name"]):
+                self.assertEqual(split_sentences(case["input"]), case["expected"])
 
-    def test_summary_uses_original_sentences(self):
-        source = (
-            "The cloud workshop begins Monday. Students may bring lunch. "
-            "Cloud workshop registration closes Friday. "
-            "The cloud workshop includes an Azure demonstration. Parking is available."
-        )
-        summary = summarize_extractively(source, 2)
-        sentences = split_sentences(summary)
-        self.assertEqual(len(sentences), 2)
-        for sentence in sentences:
-            self.assertIn(sentence, source)
-
-    def test_semantic_summary_avoids_near_duplicate_sentences(self):
-        source = (
-            "Cloud systems reduce latency. Edge systems reduce latency. "
-            "Privacy rules keep sensitive data local. Registration closes Friday."
-        )
-        vectors = np.asarray([[1, 0], [0.99, 0.01], [0, 1], [-1, 0]], dtype=np.float32)
-        summary = summarize_semantically(source, vectors, 2)
-        self.assertIn("Cloud systems reduce latency.", summary)
-        self.assertIn("Privacy rules keep sensitive data local.", summary)
-        self.assertNotIn("Edge systems reduce latency.", summary)
+    def test_long_unpunctuated_line_is_not_cut_arbitrarily(self):
+        source = " ".join(f"word{index}" for index in range(80))
+        self.assertEqual(split_sentences(source), [source])
 
 
 if __name__ == "__main__":

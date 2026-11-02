@@ -205,7 +205,7 @@ class AuthService:
         self.router.add_api_route("/register", self.register, methods=["POST"], status_code=201)
         self.router.add_api_route("/login", self.login, methods=["POST"])
         self.router.add_api_route("/me", self.me, methods=["GET"])
-        self.router.add_api_route("/logout", self.logout, methods=["POST"], status_code=204)
+        self.router.add_api_route("/logout", self.logout, methods=["POST"], status_code=204, response_model=None)
 
     @staticmethod
     def _bearer_token(authorization: str | None) -> str:

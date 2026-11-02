@@ -43,6 +43,31 @@ The **Distributed demo** tab retains the measured local/edge/Azure embedding and
 search workflow. Browser classification, scheduling, and summarization have automated
 TypeScript tests; the shared worker summarizer has Python tests.
 
+## Structured summaries (local source changes; not yet deployed)
+
+The workspace now requests a maximum of 180 words instead of three sentences.
+Summaries retain section headings and source-based bullets, attaching recognized
+employer/project context to each selected fact. MiniLM embeds candidates across
+the whole document in batches (16 units per browser batch; workers use their
+configured inference batch size). Selection combines MMR with section coverage,
+employer coverage, quantified-achievement preference and exact-fact deduplication.
+The model-free fallback uses the same structure and budget, with heuristic ranking.
+
+`POST /api/browser/summarize` and `POST /summarize` accept `word_budget` (20–500,
+default 180). `sentence_count` remains accepted as a deprecated compatibility field
+but no longer controls the active summary path. The summary remains a string,
+formatted with `##` headings and `-` bullets; receipts identify the structured
+operation. Update the frontend, gateway/control plane and workers together before
+expecting this behavior in the live deployment. Existing cached summaries need to
+be regenerated.
+
+Context detection is heuristic, especially for unusual resumes and PDF layouts.
+Coverage is encouraged within the budget, not guaranteed for every section.
+Oversized individual facts may be marked with an ellipsis. No generative model is
+used. Older sentence-count helpers remain as regression baselines, not the active
+workspace implementation. Method changes and paper edits are tracked in
+[the paper alignment log](docs/PAPER_ALIGNMENT_LOG.md).
+
 ## Architecture
 
 ```text
