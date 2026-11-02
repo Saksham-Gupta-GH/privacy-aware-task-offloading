@@ -17,7 +17,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from .embedding_onnx import MODEL_ID, MODEL_REVISION, OnnxEmbedder
-from .summarizer import split_sentences, summarize_extractively, summarize_semantically
+from .structured_summary import build_summary_units, select_structured_summary, summary_embedding_text
 
 
 class EmbedRequest(BaseModel):
@@ -32,7 +32,8 @@ class SummarizeRequest(BaseModel):
     task_id: str = Field(min_length=1, max_length=100)
     document_id: str = Field(min_length=1, max_length=100)
     content: str = Field(min_length=1, max_length=1_000_000)
-    sentence_count: int = Field(default=3, ge=1, le=10)
+    sentence_count: int = Field(default=3, ge=1, le=10, deprecated=True, description="Legacy field; structured summaries use word_budget.")
+    word_budget: int = Field(default=180, ge=20, le=500)
     privacy_label: str
     policy_version: str
 
@@ -125,14 +126,14 @@ async def summarize(request: SummarizeRequest) -> dict[str, Any]:
             runtime.queue_depth -= 1
             runtime.state = "busy"
             started = time.perf_counter()
-            sentences = split_sentences(request.content)[:48]
-            if runtime.embedder is not None and len(sentences) > request.sentence_count:
-                vectors = await asyncio.to_thread(runtime.embedder.embed, sentences)
-                summary = summarize_semantically(request.content, vectors, request.sentence_count)
-                operation = "minilm_mmr_summary"
+            units = build_summary_units(request.content)
+            if runtime.embedder is not None and units:
+                vectors = await asyncio.to_thread(runtime.embedder.embed, [summary_embedding_text(unit) for unit in units])
+                summary = select_structured_summary(units, vectors, request.word_budget)
+                operation = "structured_minilm_mmr_summary"
             else:
-                summary = summarize_extractively(request.content, request.sentence_count)
-                operation = "frequency_fallback_summary"
+                summary = select_structured_summary(units, word_budget=request.word_budget)
+                operation = "structured_fallback_summary"
             processing_ms = (time.perf_counter() - started) * 1000.0
             return {
                 "receipt_id": str(uuid.uuid4()),
@@ -143,7 +144,8 @@ async def summarize(request: SummarizeRequest) -> dict[str, Any]:
                 "operation": operation,
                 "processing_ms": round(processing_ms, 3),
                 "input_characters": len(request.content),
-                "sentence_count": request.sentence_count,
+                "word_budget": request.word_budget,
+                "candidate_units": len(units),
                 "policy_version": request.policy_version,
                 "summary": summary,
             }

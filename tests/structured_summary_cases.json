@@ -1,0 +1,83 @@
+[
+  {
+    "name": "resume attribution and coverage",
+    "content": "ALEX EXAMPLE\nalex@example.test\nEDUCATION\nExample University\nB.Tech in Computer Science\nCGPA: 9.20/10.0 | Semester-wise: 9.0, 9.4\nEXPERIENCE\nSoftware Development Intern Jun 2025 – Aug 2025\nAcme Labs\nBuilt Redis caching that reduced database load by 40%.\nData Analyst Intern Jun 2024 – Jul 2024\nMetro Rail\nDeveloped SQL dashboards for operational reporting.\nPROJECTS\nAtlas - GPU Analytics\nBenchmarked CUDA kernels, achieving 150× speedup.\nBeacon - Workflow Platform\nBuilt a workflow engine with durable execution.\nACHIEVEMENTS\nWon a national programming competition.",
+    "expectedContexts": [
+      "Example University",
+      "Software Development Intern — Acme Labs",
+      "Data Analyst Intern — Metro Rail",
+      "Atlas - GPU Analytics",
+      "Beacon - Workflow Platform",
+      ""
+    ],
+    "required": [
+      "CGPA: 9.20/10.0",
+      "Acme Labs",
+      "Metro Rail",
+      "Atlas - GPU Analytics: Benchmarked",
+      "150×",
+      "## ACHIEVEMENTS"
+    ],
+    "forbidden": [
+      "alex@example.test",
+      "Acme Labs: Benchmarked",
+      "Metro Rail: Built Redis"
+    ]
+  },
+  {
+    "name": "research report sections",
+    "content": "## Background\nThe service handles public weather forecasts.\n## Methods\nWe compared cached and uncached requests.\n## Results\nCaching reduced latency by 35%.\n## Conclusion\nThe cached configuration should be used for repeated requests.",
+    "expectedContexts": [
+      "",
+      "",
+      "",
+      ""
+    ],
+    "required": [
+      "## Background",
+      "## Methods",
+      "## Results",
+      "## Conclusion",
+      "35%"
+    ],
+    "forbidden": []
+  },
+  {
+    "name": "plain text remains extractive",
+    "content": "The workshop starts Monday. Registration closes Friday. Bring a laptop.",
+    "expectedContexts": [
+      "",
+      "",
+      ""
+    ],
+    "required": [
+      "The workshop starts Monday.",
+      "Registration closes Friday.",
+      "Bring a laptop."
+    ],
+    "forbidden": []
+  },
+  {
+    "name": "job posting with table and custom headings",
+    "content": "About Us:\nWe are a firm in the International Capital Markets.\n\nRole Details:\n⮚ Execute trades in international markets.\n⮚ Utilize strong risk management skills to maximize returns.\n\nSkills:\n⮚ Strong math aptitude and numerical analysis skills.\n⮚ Quick and independent decision-maker.\n\nJob Location: Mumbai / Bengaluru\nStipend: 20,000/PM",
+    "expectedContexts": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "Job Location",
+      "Stipend"
+    ],
+    "required": [
+      "## About Us",
+      "## Role Details",
+      "## Skills",
+      "Job Location: Mumbai",
+      "Stipend: 20,000/PM"
+    ],
+    "forbidden": [
+      "⮚"
+    ]
+  }
+]

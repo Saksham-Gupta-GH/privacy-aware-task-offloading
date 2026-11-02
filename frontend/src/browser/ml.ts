@@ -1,5 +1,5 @@
-import { buildSearchPassages, selectSemanticSummary } from "./semantic";
-import { splitSentences } from "./summarize";
+import { buildSearchPassages } from "./semantic";
+import { buildSummaryUnits, selectStructuredSummary, summaryEmbeddingText } from "./structured-summary";
 
 export const BROWSER_MODEL = "onnx-community/all-MiniLM-L6-v2-ONNX";
 
@@ -48,11 +48,14 @@ export async function createSearchIndex(content: string, onProgress?: ProgressHa
 
 export async function summarizeWithMiniLM(
   content: string,
-  requestedSentences = 3,
+  wordBudget = 180,
   onProgress?: ProgressHandler,
 ): Promise<string> {
-  const sentences = splitSentences(content).slice(0, 48);
-  if (sentences.length <= requestedSentences) return sentences.join(" ");
-  const vectors = await embedTexts(sentences, onProgress);
-  return selectSemanticSummary(content, vectors, requestedSentences);
+  const units = buildSummaryUnits(content);
+  if (!units.length) return "";
+  const vectors: number[][] = [];
+  for (let start = 0; start < units.length; start += 16) {
+    vectors.push(...await embedTexts(units.slice(start, start + 16).map(summaryEmbeddingText), onProgress));
+  }
+  return selectStructuredSummary(units, vectors, wordBudget);
 }

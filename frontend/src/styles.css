@@ -184,6 +184,30 @@ label.button input { position: absolute; inset: 0; width: 100%; height: 100%; op
 .summary-panel ul { display: grid; gap: 10px; margin: 0; padding: 3px 0 12px; list-style: none; }
 .summary-panel li { display: flex; align-items: flex-start; gap: 8px; color: #435047; font-size: 13px; line-height: 1.5; }
 .summary-panel li svg { flex: 0 0 auto; margin-top: 2px; color: var(--green); }
+.summary-panel .summary-heading { align-items: center; padding: 22px 24px; margin-bottom: 0; }
+.summary-heading h2 { margin: 5px 0; overflow-wrap: anywhere; }
+.summary-heading p { color: var(--muted); font-size: 12px; margin: 0; }
+.summary-eyebrow { color: var(--green); font-size: 10px; font-weight: 700; letter-spacing: 1.4px; }
+.summary-copy-status { display: block; color: var(--green); font-size: 12px; }
+.summary-copy-status:empty { display: none; }
+.summary-sections { max-width: 980px; margin: 0 auto; }
+.summary-section { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 24px; padding: 22px 6px 10px; border-bottom: 1px solid #eceae1; }
+.summary-section:last-child { border-bottom: 0; }
+.summary-section h3 { margin: 3px 0 12px; font-size: 11px; line-height: 1.6; letter-spacing: .8px; color: var(--green); }
+.summary-section ul { gap: 18px; }
+.summary-section li { font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
+.summary-context { display: block; font-size: 14px; color: var(--ink); margin-bottom: 4px; line-height: 1.5; }
+.summary-bullet { color: var(--green); padding-right: 3px; }
+.summary-processing { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+.summary-processing summary { color: var(--muted); font-size: 12px; }
+.summary-processing .receipt-line { border-top: 0; }
+.summary-length { display: flex; flex-direction: column; gap: 5px; color: var(--muted); font-size: 11px; }
+.summary-length select { background: var(--paper); border: 1px solid var(--line); border-radius: 5px; color: var(--ink); padding: 8px; font-size: 12px; }
+.detail-actions { flex-wrap: wrap; align-items: flex-end; }
+@media (max-width: 640px) {
+  .summary-section { grid-template-columns: minmax(0, 1fr); gap: 2px; padding-top: 18px; }
+  .summary-panel .summary-heading { align-items: flex-start; gap: 14px; flex-direction: column; padding: 18px; }
+}
 .receipt-line { display: flex; justify-content: space-between; gap: 12px; padding-top: 12px; border-top: 1px solid #eceae1; color: var(--muted); font-size: 11px; }
 .receipt-line code { color: #46534b; font: 11px "DM Sans", sans-serif; }
 

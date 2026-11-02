@@ -1,15 +1,44 @@
 import unittest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 from fastapi.testclient import TestClient
 
-from privacydrive.public_gateway import app
+from privacydrive.public_gateway import app, auth
 
+app.dependency_overrides[auth.require_user] = lambda: {"id": "test-user-id", "email": "test@example.com"}
 
 client = TestClient(app)
 
 
 class PublicGatewayTests(unittest.TestCase):
+    @patch("privacydrive.public_gateway.httpx.AsyncClient")
+    @patch("privacydrive.public_gateway.check_worker_health", new_callable=AsyncMock)
+    def test_summary_budget_and_grouped_text_survive_proxy(self, mock_health, mock_client):
+        mock_health.return_value = {"available": True, "ready": True}
+        grouped = "## Results\n- Latency fell by 35%.\n\n## Conclusion\n- Keep caching enabled."
+        response = Mock()
+        response.json.return_value = {"summary": grouped, "word_budget": 140, "operation": "structured_minilm_mmr_summary"}
+        remote = AsyncMock()
+        remote.post.return_value = response
+        mock_client.return_value.__aenter__.return_value = remote
+        result = client.post("/api/browser/summarize", json={
+            "document_id": "budget-test", "document_name": "public.txt",
+            "content": "Public cloud workshop on Monday for university students.",
+            "selected_tier": "cloud", "reported_sensitivity": "public", "word_budget": 140,
+        })
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(remote.post.call_args.kwargs["json"]["word_budget"], 140)
+        self.assertEqual(result.json()["summary"], grouped)
+
+    def test_summary_budget_rejects_out_of_range_values(self):
+        for budget in (0, 501):
+            result = client.post("/api/browser/summarize", json={
+                "document_id": "budget-invalid", "document_name": "public.txt",
+                "content": "Public workshop.", "selected_tier": "cloud",
+                "reported_sensitivity": "public", "word_budget": budget,
+            })
+            self.assertEqual(result.status_code, 422)
+
     def test_health_check(self):
         response = client.get("/health")
         self.assertEqual(response.status_code, 200)

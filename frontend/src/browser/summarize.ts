@@ -6,22 +6,23 @@ const words = (value: string) =>
   value.toLowerCase().match(/[a-z0-9][a-z0-9'-]*/g)?.filter((word) => !STOP_WORDS.has(word)) ?? [];
 
 export function splitSentences(content: string): string[] {
-  const cleaned = content.replace(/\r/g, "").trim();
-  if (!cleaned) return [];
-  const normalized = cleaned.replace(/\s+/g, " ");
-  if (typeof Intl.Segmenter !== "undefined") {
-    const segmenter = new Intl.Segmenter("en", { granularity: "sentence" });
-    const segmented = Array.from(segmenter.segment(normalized), (entry) => entry.segment.trim()).filter(Boolean);
-    if (segmented.length > 1) return segmented;
+  // Lines are structural boundaries for PDFs, headings and lists. Never flatten
+  // them before segmentation or discard short headings. Keep Python in sync.
+  const units: string[] = [];
+  const abbreviation = /(?:\b(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|vs|e\.g|i\.e)|\b(?:[A-Za-z]\.)*[A-Za-z])\.$/i;
+  for (const line of content.replace(/\r\n?/g, "\n").split(/\n+/)) {
+    const normalized = line.replace(/\s+/g, " ").trim();
+    if (!normalized) continue;
+    let pending = "";
+    for (const part of normalized.split(/(?<=[.!?])\s+/)) {
+      pending += `${pending ? " " : ""}${part}`;
+      if (abbreviation.test(pending) || /^\d+\.$/.test(pending)) continue;
+      units.push(pending);
+      pending = "";
+    }
+    if (pending) units.push(pending);
   }
-  const punctuationSplit = normalized.split(/(?<=[.!?])\s+/).map((sentence) => sentence.trim()).filter(Boolean);
-  if (punctuationSplit.length > 1) return punctuationSplit;
-  const lines = cleaned.split(/\n+/).map((line) => line.trim()).filter((line) => line.length > 20);
-  if (lines.length > 1) return lines;
-  const tokens = normalized.split(/\s+/);
-  return Array.from({ length: Math.ceil(tokens.length / 35) }, (_, index) =>
-    tokens.slice(index * 35, (index + 1) * 35).join(" "),
-  ).filter(Boolean);
+  return units;
 }
 
 export function summarizeExtractively(content: string, requestedSentences = 3): string {

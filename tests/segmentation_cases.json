@@ -1,0 +1,11 @@
+[
+  {"name":"resume headings and unpunctuated lists", "input":"EDUCATION\nExample Institute\nCGPA: 9.30/10.0\nSKILLS\nPython, SQL, Go\nEXPERIENCE\nBuilt a caching service.", "expected":["EDUCATION","Example Institute","CGPA: 9.30/10.0","SKILLS","Python, SQL, Go","EXPERIENCE","Built a caching service."]},
+  {"name":"initialisms and titles", "input":"Dr. Rao studied at Delhi Public School R.K. Puram. She built a service.", "expected":["Dr. Rao studied at Delhi Public School R.K. Puram.","She built a service."]},
+  {"name":"bullets without terminal punctuation", "input":"• Built a service\n- Reduced latency\n* Added caching", "expected":["• Built a service","- Reduced latency","* Added caching"]},
+  {"name":"numbered list markers", "input":"1. Build the service. Test it.\n2. Deploy it.", "expected":["1. Build the service.","Test it.","2. Deploy it."]},
+  {"name":"paragraph boundaries", "input":"A paragraph without punctuation\n\nAnother paragraph without punctuation", "expected":["A paragraph without punctuation","Another paragraph without punctuation"]},
+  {"name":"ordinary prose and decimals", "input":"Latency fell to 1.2 seconds. Is it ready? Yes!", "expected":["Latency fell to 1.2 seconds.","Is it ready?","Yes!"]},
+  {"name":"examples and explanations", "input":"Use tools, e.g. Python and SQL. Choose one, i.e. Python.", "expected":["Use tools, e.g. Python and SQL.","Choose one, i.e. Python."]},
+  {"name":"mixed line endings and whitespace", "input":" TITLE \r\nFirst   item\rSecond item\n\n", "expected":["TITLE","First item","Second item"]},
+  {"name":"empty input", "input":" \r\n\t", "expected":[]}
+]
