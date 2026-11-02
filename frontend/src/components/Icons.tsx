@@ -43,6 +43,19 @@ export const IconFileText: React.FC<IconProps> = ({ size = 16, className = "", s
   </svg>
 );
 
+export const IconSidebar: React.FC<IconProps> = ({ size = 16, className = "", style }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="currentColor" className={className} style={style} aria-hidden="true">
+    <path d="M0 3a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm5-1v12h9a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zM4 2H2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h2z" />
+  </svg>
+);
+
+export const IconUpload: React.FC<IconProps> = ({ size = 16, className = "", style }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="currentColor" className={className} style={style} aria-hidden="true">
+    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
+    <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V10.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708z" />
+  </svg>
+);
+
 export const IconCloud: React.FC<IconProps> = ({ size = 16, className = "", style }) => (
   <svg width={size} height={size} viewBox="0 0 16 16" fill="currentColor" className={className} style={style} aria-hidden="true">
     <path d="M4.406 3.342A5.53 5.53 0 0 1 8 2c2.69 0 4.923 2 5.166 4.57A4.5 4.5 0 0 1 15.5 11 4.5 4.5 0 0 1 11 15.5H4a4 4 0 0 1-4-4c0-1.846 1.25-3.393 2.956-3.837a5.5 5.5 0 0 1 1.45-4.321" />
