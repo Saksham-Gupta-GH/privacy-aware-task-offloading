@@ -21,39 +21,39 @@
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
-%% ─── TikZ styles ─────────────────────────────────────────────────────────────
+%% ─── Compact TikZ styles ─────────────────────────────────────────────────────
 \tikzset{
   tierbox/.style={
-    rectangle, rounded corners=4pt, draw=black!70, fill=#1,
-    text width=4.8cm, align=left, minimum height=2.4cm,
-    font=\footnotesize
+    rectangle, rounded corners=3pt, draw=black!70, fill=#1,
+    text width=4.5cm, align=left, minimum height=2.2cm,
+    font=\scriptsize
   },
   tierbox/.default=white,
-  arrow/.style={-{Stealth[length=5pt]}, thick},
-  dasharrow/.style={-{Stealth[length=5pt]}, dashed, thick},
+  arrow/.style={-{Stealth[length=4pt]}, thick},
+  dasharrow/.style={-{Stealth[length=4pt]}, dashed, thick},
   decision/.style={
-    diamond, draw=black!70, fill=yellow!20, aspect=2.4,
-    align=center, font=\scriptsize, inner sep=2pt
+    diamond, draw=black!70, fill=yellow!20, aspect=1.9,
+    align=center, font=\tiny, inner sep=1.5pt
   },
   startstop/.style={
     ellipse, draw=black!70, fill=gray!20,
-    align=center, font=\footnotesize, minimum width=2.2cm
+    align=center, font=\scriptsize, minimum width=1.8cm, minimum height=0.5cm
   },
   process/.style={
-    rectangle, rounded corners=3pt, draw=black!70, fill=blue!10,
-    align=center, font=\scriptsize, text width=3.0cm, minimum height=0.7cm
+    rectangle, rounded corners=2pt, draw=black!70, fill=blue!10,
+    align=center, font=\tiny, text width=2.4cm, minimum height=0.55cm
   },
   resultG/.style={
-    rectangle, rounded corners=3pt, draw=green!60!black, fill=green!15,
-    align=center, font=\scriptsize\bfseries, text width=2.2cm, minimum height=0.6cm
+    rectangle, rounded corners=2pt, draw=green!60!black, fill=green!15,
+    align=center, font=\tiny\bfseries, text width=1.5cm, minimum height=0.45cm
   },
   resultR/.style={
-    rectangle, rounded corners=3pt, draw=red!60!black, fill=red!15,
-    align=center, font=\scriptsize\bfseries, text width=2.2cm, minimum height=0.6cm
+    rectangle, rounded corners=2pt, draw=red!60!black, fill=red!15,
+    align=center, font=\tiny\bfseries, text width=1.5cm, minimum height=0.45cm
   },
   resultB/.style={
-    rectangle, rounded corners=3pt, draw=blue!60!black, fill=blue!15,
-    align=center, font=\scriptsize\bfseries, text width=2.2cm, minimum height=0.6cm
+    rectangle, rounded corners=2pt, draw=blue!60!black, fill=blue!15,
+    align=center, font=\tiny\bfseries, text width=1.5cm, minimum height=0.45cm
   }
 }
 
@@ -113,14 +113,15 @@ Such decisions represent severe privacy violations regardless of how quickly the
 
 \begin{figure}[t]
 \centering
-\begin{tikzpicture}[node distance=0.45cm]
+\resizebox{0.78\columnwidth}{!}{%
+\begin{tikzpicture}[node distance=0.38cm]
   \node[startstop] (task) {Incoming Task $i$};
-  \node[process, below=0.35cm of task] (step1) {Step 1: Privacy Admission\\$\Rightarrow \text{Allowed Tiers } A_i$};
-  \node[process, below=0.35cm of step1] (step2) {Step 2: Readiness \& Deadline\\$\Rightarrow \text{Feasible Candidates } \mathcal{F}_i$};
-  \node[decision, below=0.4cm of step2] (check) {$\mathcal{F}_i = \emptyset$?};
-  \node[resultR, right=0.6cm of check] (defer) {Defer Task\\(Zero Leakage)};
-  \node[process, below=0.4cm of check] (step3) {Step 3: Cost Minimization\\$\min J_{i,j}(\text{Latency}, \text{Energy})$};
-  \node[resultG, below=0.35cm of step3] (dispatch) {Dispatch to Tier $j^*$};
+  \node[process, below=0.32cm of task] (step1) {Step 1: Privacy Admission\\$\Rightarrow \text{Allowed Tiers } A_i$};
+  \node[process, below=0.32cm of step1] (step2) {Step 2: Readiness \& Deadline\\$\Rightarrow \text{Feasible Candidates } \mathcal{F}_i$};
+  \node[decision, below=0.36cm of step2] (check) {$\mathcal{F}_i = \emptyset$?};
+  \node[resultR, right=0.5cm of check] (defer) {Defer Task\\(Zero Leakage)};
+  \node[process, below=0.36cm of check] (step3) {Step 3: Cost Minimization\\$\min J_{i,j}(\text{Latency}, \text{Energy})$};
+  \node[resultG, below=0.32cm of step3] (dispatch) {Dispatch to Tier $j^*$};
 
   \draw[arrow] (task) -- (step1);
   \draw[arrow] (step1) -- (step2);
@@ -128,7 +129,8 @@ Such decisions represent severe privacy violations regardless of how quickly the
   \draw[arrow] (check) -- node[above,font=\tiny]{Yes} (defer);
   \draw[arrow] (check) -- node[right,font=\tiny]{No} (step3);
   \draw[arrow] (step3) -- (dispatch);
-\end{tikzpicture}
+\end{tikzpicture}%
+}
 \caption{The core scheduling paradigm of PrivacyDrive. Privacy is enforced as an upstream boolean admission gate before numerical latency and energy optimization occurs.}
 \label{fig:paradigm}
 \end{figure}
@@ -182,11 +184,12 @@ PrivacyDrive consists of three decoupled layers: the client workspace, the publi
 
 \begin{figure*}[t]
 \centering
-\begin{tikzpicture}[node distance=0.6cm and 0.8cm]
+\resizebox{0.92\textwidth}{!}{%
+\begin{tikzpicture}[node distance=0.55cm and 0.7cm]
 
   %% CLIENT TIER
-  \node[tierbox=blue!08, text width=5.2cm, minimum height=3.4cm] (client) {
-    \textbf{CLIENT TIER (Web Browser / UE)}\\[3pt]
+  \node[tierbox=blue!08, text width=4.8cm, minimum height=3.0cm] (client) {
+    \textbf{CLIENT TIER (Web Browser / UE)}\\[2pt]
     \textbullet\ React + TypeScript Single Page App\\
     \textbullet\ Deterministic Privacy Classifier\\
     \textbullet\ Two-Phase Placement Optimizer\\
@@ -197,14 +200,14 @@ PrivacyDrive consists of three decoupled layers: the client workspace, the publi
   };
 
   %% LOCAL STORAGE
-  \node[tierbox=gray!12, text width=4.8cm, minimum height=1.1cm, below=0.6cm of client, align=center] (localdb) {
+  \node[tierbox=gray!12, text width=4.5cm, minimum height=0.9cm, below=0.5cm of client, align=center] (localdb) {
     \textbf{IndexedDB \& RAM Cache (Local Only)}\\
     Zero Network I/O $\cdot$ Restricted / Uncertain Data
   };
 
   %% PUBLIC GATEWAY
-  \node[tierbox=orange!10, text width=4.4cm, minimum height=3.4cm, right=1.2cm of client] (gw) {
-    \textbf{AZURE PUBLIC GATEWAY}\\[3pt]
+  \node[tierbox=orange!10, text width=4.2cm, minimum height=3.0cm, right=1.0cm of client] (gw) {
+    \textbf{AZURE PUBLIC GATEWAY}\\[2pt]
     \textbullet\ Lightweight FastAPI Service\\
     \textbullet\ Peak RAM Footprint $<30$~MB\\
     \textbullet\ Independent Policy Verification\\
@@ -214,16 +217,16 @@ PrivacyDrive consists of three decoupled layers: the client workspace, the publi
   };
 
   %% EDGE WORKER
-  \node[tierbox=green!10, text width=4.6cm, minimum height=1.5cm, above right=-0.1cm and 1.2cm of gw] (edge) {
-    \textbf{TRUSTED EDGE WORKER}\\[2pt]
+  \node[tierbox=green!10, text width=4.2cm, minimum height=1.3cm, above right=-0.1cm and 1.0cm of gw] (edge) {
+    \textbf{TRUSTED EDGE WORKER}\\[1pt]
     \textbullet\ MiniLM ONNX Inference\\
     \textbullet\ Signed Execution Receipts\\
     \textit{Host: AMD Ryzen 5 (8 GB RAM)}
   };
 
   %% CLOUD WORKER
-  \node[tierbox=red!08, text width=4.6cm, minimum height=1.5cm, below right=-0.1cm and 1.2cm of gw] (cloud) {
-    \textbf{CLOUD WORKER}\\[2pt]
+  \node[tierbox=red!08, text width=4.2cm, minimum height=1.3cm, below right=-0.1cm and 1.0cm of gw] (cloud) {
+    \textbf{CLOUD WORKER}\\[1pt]
     \textbullet\ MiniLM ONNX (Batch Size = 1)\\
     \textbullet\ Strict 320 MB Memory Ceiling\\
     \textit{Host: Azure Standard\_B2ats\_v2}
@@ -235,7 +238,8 @@ PrivacyDrive consists of three decoupled layers: the client workspace, the publi
   \draw[arrow] (gw.north east) -- node[above,sloped,font=\tiny]{Reverse SSH Tunnel} (edge.west);
   \draw[arrow] (gw.south east) -- node[below,sloped,font=\tiny]{Loopback HTTP :8001} (cloud.west);
 
-\end{tikzpicture}
+\end{tikzpicture}%
+}
 \caption{Three-tier system architecture of PrivacyDrive. Sensitive documents (Restricted and Uncertain) are locked to the local client and processed via in-browser WebAssembly neural inference. Public tasks are transmitted over HTTPS through the memory-capped Azure public gateway to the edge or cloud worker.}
 \label{fig:arch}
 \end{figure*}
@@ -277,20 +281,22 @@ Let task $i$ have candidate execution tiers $j \in \{L, E, C\}$:
 \subsection{Sensitivity Classes and Permitted Destinations}
 Every document is classified into a sensitivity class $s_i \in \{\text{Public}, \text{Personal}, \text{Restricted}, \text{Uncertain}\}$, defining the allowed destination set $A_i$ as summarized in Table~\ref{tab:policy}.
 
-\begin{table}[h]
+\begin{table}[t]
 \caption{Privacy Policy Sensitivity Lattice and Feasible Destinations}
 \label{tab:policy}
 \centering
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lll}
 \toprule
 \textbf{Sensitivity Class} & \textbf{Allowed Destinations ($A_i$)} & \textbf{Data Types Included} \\
 \midrule
-\textbf{Public}     & $\{L, E, C\}$ (All tiers)  & News, announcements, published papers \\
+\textbf{Public}     & $\{L, E, C\}$ (All tiers)  & News, documentation, public announcements \\
 \textbf{Personal}   & $\{L, E\}$ (No cloud)      & Resumes, emails, personal phone contacts \\
-\textbf{Restricted} & $\{L\}$ (Local only)       & Credit cards, medical records, API keys \\
-\textbf{Uncertain}  & $\{L\}$ (Default safe)     & Mixed signals, ambiguous text \\
+\textbf{Restricted} & $\{L\}$ (Local only)       & Credit cards, clinical diagnoses, API credentials \\
+\textbf{Uncertain}  & $\{L\}$ (Default safe)     & Ambiguous text, low-confidence markers \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 \subsection{Threat Boundary}
@@ -305,25 +311,26 @@ The decision workflow is shown in Fig.~\ref{fig:classifier}.
 
 \begin{figure}[t]
 \centering
-\begin{tikzpicture}[node distance=0.45cm]
+\resizebox{0.82\columnwidth}{!}{%
+\begin{tikzpicture}[node distance=0.38cm]
 
   \node[startstop] (start) {Document Text};
 
-  \node[decision, below=0.45cm of start] (d1) {Luhn Payment\\or CVV signals?};
-  \node[resultR, right=0.6cm of d1] (r1) {Restricted};
+  \node[decision, below=0.35cm of start] (d1) {Luhn Payment\\or CVV signals?};
+  \node[resultR, right=0.45cm of d1] (r1) {Restricted};
 
-  \node[decision, below=0.55cm of d1] (d2) {Health records\\or confidential?};
-  \node[resultR, right=0.6cm of d2] (r2) {Restricted};
+  \node[decision, below=0.45cm of d1] (d2) {Health records\\or confidential?};
+  \node[resultR, right=0.45cm of d2] (r2) {Restricted};
 
-  \node[decision, below=0.55cm of d2] (d3) {Personal email\\or phone number?};
+  \node[decision, below=0.45cm of d2] (d3) {Personal email\\or phone number?};
 
-  \node[decision, below=0.55cm of d3] (d4) {Corporate public\\directory context?};
-  \node[resultB, right=0.6cm of d4] (r4) {Public};
-  \node[resultG, left=0.6cm of d4] (r3) {Personal};
+  \node[decision, below=0.45cm of d3] (d4) {Corporate public\\directory context?};
+  \node[resultB, right=0.45cm of d4] (r4) {Public};
+  \node[resultG, left=0.45cm of d4] (r3) {Personal};
 
-  \node[decision, below=0.55cm of d4] (d5) {Ambiguous\\signals present?};
-  \node[resultR, right=0.6cm of d5] (r5) {Uncertain};
-  \node[resultB, below=0.45cm of d5] (r6) {Public};
+  \node[decision, below=0.45cm of d4] (d5) {Ambiguous\\signals present?};
+  \node[resultR, right=0.45cm of d5] (r5) {Uncertain};
+  \node[resultB, below=0.35cm of d5] (r6) {Public};
 
   \draw[arrow] (start) -- (d1);
   \draw[arrow] (d1) -- node[above,font=\tiny]{Yes} (r1);
@@ -331,13 +338,14 @@ The decision workflow is shown in Fig.~\ref{fig:classifier}.
   \draw[arrow] (d2) -- node[above,font=\tiny]{Yes} (r2);
   \draw[arrow] (d2) -- node[right,font=\tiny]{No} (d3);
   \draw[arrow] (d3) -- node[right,font=\tiny]{Yes} (d4);
-  \draw[arrow] (d3.west) -- ++(-0.4,0) |- node[above,font=\tiny,pos=0.25]{No} (d5);
+  \draw[arrow] (d3.west) -- ++(-0.3,0) |- node[above,font=\tiny,pos=0.25]{No} (d5);
   \draw[arrow] (d4) -- node[above,font=\tiny]{Yes} (r4);
   \draw[arrow] (d4) -- node[above,font=\tiny]{No} (r3);
   \draw[arrow] (d5) -- node[above,font=\tiny]{Yes} (r5);
   \draw[arrow] (d5) -- node[right,font=\tiny]{No} (r6);
 
-\end{tikzpicture}
+\end{tikzpicture}%
+}
 \caption{Privacy classification logic tree. Signals are evaluated in strict priority order. Ambiguous cases trigger a conservative fallback to Uncertain (local execution).}
 \label{fig:classifier}
 \end{figure}
@@ -398,21 +406,22 @@ The complete pipeline is shown in Fig.~\ref{fig:scheduler}.
 
 \begin{figure}[t]
 \centering
-\begin{tikzpicture}[node distance=0.45cm]
+\resizebox{0.80\columnwidth}{!}{%
+\begin{tikzpicture}[node distance=0.38cm]
 
   \node[startstop] (task) {Task $i$, Document $D_i$};
 
-  \node[process, below=0.35cm of task] (step1) {Privacy Classification\\$s_i \leftarrow \text{Classify}(D_i) \Rightarrow A_i$};
+  \node[process, below=0.32cm of task] (step1) {Privacy Classification\\$s_i \leftarrow \text{Classify}(D_i) \Rightarrow A_i$};
 
-  \node[process, below=0.35cm of step1] (step2) {Phase 1: Feasibility Check\\$j \in A_i \;\land\; \text{Ready}(j) \;\land\; T_{i,j} \le D^{\max}_i$};
+  \node[process, below=0.32cm of step1] (step2) {Phase 1: Feasibility Check\\$j \in A_i \;\land\; \text{Ready}(j) \;\land\; T_{i,j} \le D^{\max}_i$};
 
-  \node[decision, below=0.45cm of step2] (check) {$\mathcal{F}_i = \emptyset$?};
+  \node[decision, below=0.38cm of step2] (check) {$\mathcal{F}_i = \emptyset$?};
 
-  \node[resultR, right=0.6cm of check] (defer) {Task Deferred\\(No Safe Tier)};
+  \node[resultR, right=0.5cm of check] (defer) {Task Deferred\\(No Safe Tier)};
 
-  \node[process, below=0.45cm of check] (step3) {Phase 2: Cost Function\\$J_{i,j} = \alpha \frac{T_{i,j}}{T_{\text{ref}}} + (1{-}\alpha)\frac{E_{i,j}}{E_{\text{ref}}}$};
+  \node[process, below=0.38cm of check] (step3) {Phase 2: Cost Function\\$J_{i,j} = \alpha \frac{T_{i,j}}{T_{\text{ref}}} + (1{-}\alpha)\frac{E_{i,j}}{E_{\text{ref}}}$};
 
-  \node[resultG, below=0.35cm of step3] (winner) {Select $j^* = \arg\min J_{i,j}$\\Generate Signed Receipt};
+  \node[resultG, below=0.32cm of step3] (winner) {Select $j^* = \arg\min J_{i,j}$\\Generate Signed Receipt};
 
   \draw[arrow] (task) -- (step1);
   \draw[arrow] (step1) -- (step2);
@@ -421,7 +430,8 @@ The complete pipeline is shown in Fig.~\ref{fig:scheduler}.
   \draw[arrow] (check) -- node[right,font=\tiny]{No} (step3);
   \draw[arrow] (step3) -- (winner);
 
-\end{tikzpicture}
+\end{tikzpicture}%
+}
 \caption{Two-phase placement scheduling flowchart. Hard admission constraints (privacy, worker readiness, deadlines) are evaluated in Phase 1 before numerical cost optimization in Phase 2.}
 \label{fig:scheduler}
 \end{figure}
@@ -494,19 +504,21 @@ Extracted summaries consist solely of verbatim source sentences, eliminating the
 
 We evaluated PrivacyDrive across a physical, heterogeneous testbed detailed in Table~\ref{tab:testbed}.
 
-\begin{table}[h]
-\caption{Physical Testbed Specifications}
+\begin{table}[t]
+\caption{Physical Testbed Node Specifications}
 \label{tab:testbed}
 \centering
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{llll}
 \toprule
 \textbf{Node Role} & \textbf{Processor} & \textbf{Memory} & \textbf{Operating System} \\
 \midrule
 Client (UE)   & Apple M1 (8 cores)      & 16 GB Unified & macOS Sonoma 14.5 \\
-Trusted Edge  & AMD Ryzen 5 5500U (12T) & 8 GB DDR4     & Windows 11 / OpenSSH \\
+Trusted Edge  & AMD Ryzen 5 5500U (12T) & 8 GB DDR4     & Windows 11 Pro \\
 Cloud VM      & Azure B2ats\_v2 (2 vCPU)& 1 GiB RAM     & Ubuntu 24.04 LTS \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 All three nodes executed identical ONNX Runtime execution runtimes (version 1.19.2) pinned to \texttt{all-MiniLM-L6-v2} commit \texttt{1110a243}.
@@ -529,42 +541,45 @@ Two ambiguous documents (18.2\%) correctly triggered conservative fallback to Un
 All sensitive PII tokens were fully masked in task receipts.
 
 \subsection{Client vs.\ Edge Latency and Systems Findings}
-Table~\ref{tab:latency_bench} and Fig.~\ref{fig:latency_chart} compare the inference latency of the Apple M1 client against the AMD Ryzen 5 edge worker across workload scales (1 to 512 passages).
+Table~\ref{tab:multi_tier_latency} and Fig.~\ref{fig:latency_chart} compare measured inference latency across tiers and workload scales (1 to 512 passages).
 
-\begin{table}[h]
-\caption{Idle Hardware Embedding Latency: Client vs.\ Edge}
-\label{tab:latency_bench}
+\begin{table}[t]
+\caption{Multi-Tier Measured Embedding Latency Across Workload Scales}
+\label{tab:multi_tier_latency}
 \centering
-\begin{tabular}{cccc}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{ccccc}
 \toprule
-\textbf{Passage Count} & \textbf{M1 Client (ms)} & \textbf{Ryzen Edge (ms)} & \textbf{Ratio (Edge / Client)} \\
+\textbf{Passages} & \textbf{M1 Client} & \textbf{Ryzen Edge} & \textbf{Azure Worker} & \textbf{Cloud WAN} \\
 \midrule
-1   & 18.51   & 42.49    & 2.30$\times$ \\
-32  & 441.01  & 1076.32  & 2.44$\times$ \\
-128 & 1764.20 & 4305.20  & 2.44$\times$ \\
-512 & 7343.94 & 17614.59 & 2.40$\times$ \\
+1   & 18.51 ms   & 42.49 ms    & 76.29 ms   & 518.67 ms \\
+32  & 441.01 ms  & 1076.32 ms  & 2389.97 ms & 3912.63 ms \\
+128 & 1764.20 ms & 4305.20 ms  & 9564.68 ms & 15441.44 ms \\
+512 & 7343.94 ms & 17614.59 ms & N/A        & N/A \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 \begin{figure}[t]
 \centering
+\resizebox{0.92\columnwidth}{!}{%
 \begin{tikzpicture}
 \begin{axis}[
-  ybar, bar width=10pt,
-  width=\columnwidth, height=5.2cm,
-  xlabel={Passage Count (Workload Scale)},
+  ybar, bar width=7pt,
+  width=7.5cm, height=4.4cm,
+  xlabel={Workload (Passage Count)},
   ylabel={Inference Latency (ms)},
   symbolic x coords={1, 32, 128, 512},
   xtick=data,
   ymode=log,
   ymin=10, ymax=35000,
-  legend style={at={(0.03,0.95)},anchor=north west,font=\footnotesize},
-  tick label style={font=\footnotesize},
-  label style={font=\footnotesize},
+  legend style={at={(0.04,0.96)},anchor=north west,font=\tiny},
+  tick label style={font=\tiny},
+  label style={font=\scriptsize},
   grid=major,
-  grid style={dashed,gray!30},
-  enlarge x limits=0.25
+  grid style={dashed,gray!25},
+  enlarge x limits=0.22
 ]
 \addplot[fill=blue!60, draw=blue!80] coordinates {
   (1, 18.51) (32, 441.01) (128, 1764.20) (512, 7343.94)
@@ -574,7 +589,8 @@ Table~\ref{tab:latency_bench} and Fig.~\ref{fig:latency_chart} compare the infer
 };
 \legend{Apple M1 Client, AMD Ryzen 5 Edge}
 \end{axis}
-\end{tikzpicture}
+\end{tikzpicture}%
+}
 \caption{Inference execution time across passage counts (log scale). The modern client hardware outperforms the edge worker by $\approx\!2.4\times$ when both are idle, confirming that offloading is beneficial only under local queue contention.}
 \label{fig:latency_chart}
 \end{figure}
@@ -586,22 +602,7 @@ This demonstrates that static offloading rules that unconditionally dispatch wor
 \subsection{Cloud Memory Optimization}
 Deploying standard PyTorch inference on the 1~GiB Azure student VM caused out-of-memory kernel terminations during 32-passage inference.
 Transitioning to ONNX Runtime with a strict streaming batch size of 1 capped peak resident memory at 320~MB, enabling reliable execution on low-cost burstable cloud instances.
-Table~\ref{tab:cloud} presents measured worker execution and end-to-end WAN latencies over public internet connections.
-
-\begin{table}[h]
-\caption{Azure Cloud Worker Latency (End-to-End WAN)}
-\label{tab:cloud}
-\centering
-\begin{tabular}{ccc}
-\toprule
-\textbf{Passage Count} & \textbf{Worker Processing (ms)} & \textbf{End-to-End WAN Latency (ms)} \\
-\midrule
-1   & 76.29    & 518.67   \\
-32  & 2389.97  & 3912.63  \\
-128 & 9564.68  & 15441.44 \\
-\bottomrule
-\end{tabular}
-\end{table}
+As presented in Table~\ref{tab:multi_tier_latency}, worker execution required 76.29~ms for single passages and 2389.97~ms for 32 passages, with corresponding end-to-end WAN latencies of 518.67~ms and 3912.63~ms.
 
 \subsection{Scheduler Comparison Under Local Queue Contention}
 We evaluated PrivacyDrive against baseline schedulers under simulated client queue pressure across five tasks spanning all sensitivity tiers.
@@ -609,21 +610,22 @@ Results are summarized in Table~\ref{tab:violations} and Fig.~\ref{fig:violation
 
 \begin{figure}[t]
 \centering
+\resizebox{0.92\columnwidth}{!}{%
 \begin{tikzpicture}
 \begin{axis}[
-  xbar, bar width=11pt,
-  width=\columnwidth, height=4.2cm,
+  xbar, bar width=9pt,
+  width=7.5cm, height=3.6cm,
   xlabel={Policy Violations Across 5 Tasks (Lower is Better)},
   symbolic y coords={PrivacyDrive, Always-Local, Always-Cloud, Latency-Only},
   ytick=data,
-  xmin=0, xmax=3.6,
+  xmin=0, xmax=3.8,
   nodes near coords,
   nodes near coords align=horizontal,
-  tick label style={font=\footnotesize},
-  label style={font=\footnotesize},
+  tick label style={font=\tiny},
+  label style={font=\scriptsize},
   enlarge y limits=0.25,
   grid=major,
-  grid style={dashed,gray!30}
+  grid style={dashed,gray!25}
 ]
 \addplot[fill=blue!65, draw=blue!90] coordinates {
   (0,PrivacyDrive)
@@ -632,15 +634,17 @@ Results are summarized in Table~\ref{tab:violations} and Fig.~\ref{fig:violation
   (2,Latency-Only)
 };
 \end{axis}
-\end{tikzpicture}
+\end{tikzpicture}%
+}
 \caption{Policy violations across scheduling strategies under client queue contention. PrivacyDrive and Always-Local achieve zero violations, but PrivacyDrive reduces client battery energy by 35.9\% relative to Always-Local.}
 \label{fig:violations}
 \end{figure}
 
-\begin{table}[h]
-\caption{Scheduler Comparison Under Client Queue Contention}
+\begin{table}[t]
+\caption{Scheduler Comparison Under Client Queue Contention (5 Tasks)}
 \label{tab:violations}
 \centering
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{lccc}
 \toprule
 \textbf{Scheduling Strategy} & \textbf{Policy Violations} & \textbf{Avg.\ Latency (ms)} & \textbf{Avg.\ Energy (J)} \\
@@ -650,7 +654,8 @@ Always-Local                     & 0 (0\%)          & 918.80  & 2.297 \\
 Always-Cloud                     & 3 (60\%)         & 642.10  & 0.985 \\
 Latency-Only                     & 2 (40\%)         & 615.40  & 0.941 \\
 \bottomrule
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 While Always-Cloud and Latency-Only achieve lower execution latencies, they commit 3 and 2 severe privacy violations, respectively, dispatching personal resumes and credit card statements to the public cloud.
