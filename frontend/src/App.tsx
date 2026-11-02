@@ -17,12 +17,13 @@ const api = async <T,>(path: string, options?: RequestInit, base = ""): Promise<
 };
 
 function App() {
+  const [activePage, setActivePage] = useState<"files" | "search">("files");
+  const [menuOpen, setMenuOpen] = useState(false);
   const [workers, setWorkers] = useState<Record<string, Worker>>({
     local: { tier: "local", available: true, ready: true, queue_depth: 0, detail: "Browser ready" },
     edge: { tier: "edge", available: false, ready: false, queue_depth: 0, detail: "Edge worker offline" },
     cloud: { tier: "cloud", available: false, ready: false, queue_depth: 0, detail: "Cloud gateway ready" },
   });
-  const [error, setError] = useState("");
 
   const refreshWorkers = async () => {
     try {
@@ -42,6 +43,14 @@ function App() {
       {/* MoveInSync-Style Clean Header */}
       <header className="moveinsync-header">
         <div className="header-inner">
+          <button
+            className="nav-toggle"
+            aria-label={menuOpen ? "Close navigation" : "Open navigation"}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <span /><span /><span />
+          </button>
           <div className="brand-group">
             <IconBrandLogo size={32} />
             <div className="brand-titles">
@@ -66,17 +75,16 @@ function App() {
             </div>
           </div>
         </div>
+        {menuOpen && (
+          <nav className="app-menu" aria-label="Main navigation">
+            <button className={activePage === "files" ? "active" : ""} onClick={() => { setActivePage("files"); setMenuOpen(false); }}>Files</button>
+            <button className={activePage === "search" ? "active" : ""} onClick={() => { setActivePage("search"); setMenuOpen(false); }}>Smart Search</button>
+          </nav>
+        )}
       </header>
 
       <main className="moveinsync-main">
-        {error && (
-          <div className="error-banner">
-            {error}
-            <button onClick={() => setError("")}>×</button>
-          </div>
-        )}
-
-        <BrowserWorkspace workers={workers} />
+        <BrowserWorkspace workers={workers} page={activePage} onOpenFile={() => setActivePage("files")} />
       </main>
     </div>
   );
