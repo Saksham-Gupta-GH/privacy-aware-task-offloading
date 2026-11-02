@@ -5,9 +5,10 @@ from fastapi.testclient import TestClient
 
 from privacydrive.public_gateway import app, auth
 
-app.dependency_overrides[auth.require_user] = lambda: {"id": "test-user-id", "email": "test@example.com"}
+user = auth.store.register("Gateway Tester", "gateway-tester@example.com", "password123")
+token = auth.store.create_session(user["id"])
 
-client = TestClient(app)
+client = TestClient(app, headers={"Authorization": f"Bearer {token}"})
 
 
 class PublicGatewayTests(unittest.TestCase):
