@@ -491,3 +491,35 @@ authorized and implemented in A005; the other suggestions remain unimplemented.
   emails as Personal unless an explicit nearby public-contact marker is present.
 - User notification: the implementation defects and the planned parity repair were
   reported before editing.
+
+## A017 - User-supplied humanized paper prose
+
+- Date: 2026-11-03. Status: incorporated and verified in the LaTeX paper.
+- Source: user-supplied `cloud_computing_1.pdf`, an eight-page Microsoft Word
+  rendering identified by the user as the non-AI/humanized version.
+- Paper sections: Abstract; I--V; IX--XIV; Declaration. Equations, diagrams,
+  tables, measurements, citations and bibliography were retained from the
+  verified LaTeX source.
+- Previous behavior: the submission LaTeX used the earlier polished academic
+  prose even though the user's later Word/PDF version used substantially
+  different wording.
+- New behavior: the LaTeX prose now follows the wording and sentence structure
+  of the supplied PDF. Obvious conversion defects (duplicated punctuation,
+  broken words and missing mathematical labels) were corrected rather than
+  copied. No implementation method, privacy policy, calibration parameter,
+  experiment size or numerical result was changed.
+- Files: `docs/human.tex`, `docs/paper.tex`, `docs/PAPER_ALIGNMENT_LOG.md`, and
+  the regenerated paper PDF/LaTeX submission archive.
+- Validation: Tectonic compiled the revised source twice without LaTeX errors or
+  unresolved citations. The result remains an eight-page IEEE letter-size paper.
+  All pages were rendered with Poppler and inspected as a contact sheet; pages 1,
+  2, 5, 7 and 8 were also checked individually at 120 dpi. Equations, diagrams,
+  tables, references and column boundaries remain legible with no clipping or
+  overlap. The regenerated LaTeX archive passed `unzip -t` and its embedded
+  `paper.tex` matches both repository paper sources byte for byte.
+- Limitation: automated AI-text detectors are not reliable authorship tests, so
+  no detector score is promised. This entry records only that the supplied human
+  wording was transferred faithfully while preserving technical correctness.
+- Required paper edit: completed in the LaTeX sources as part of this entry.
+- User notification: the user requested that the LaTeX match the supplied
+  humanized PDF and was informed that technical notation would be preserved.
