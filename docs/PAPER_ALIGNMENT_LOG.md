@@ -458,8 +458,7 @@ authorized and implemented in A005; the other suggestions remain unimplemented.
 
 ## A016 - Email punctuation classifier correction and slider-label repair
 
-- Date: 2026-11-03. Status: implemented and deployed to the Azure worker and
-  gateway; frontend deployment pending.
+- Date: 2026-11-03. Status: implemented and deployed to Azure and Vercel.
 - Paper sections: V (privacy classification), VII-B (latency-energy weighting),
   and XII (rule-based classifier limitations).
 - Previous behavior: the shared Python and TypeScript email expressions rejected
@@ -482,8 +481,10 @@ authorized and implemented in A005; the other suggestions remain unimplemented.
   reached an unrelated host limitation because the Mac's Python 3.9 build lacks
   `hashlib.scrypt`; classifier validation was unaffected. On Azure, both services
   returned HTTP 200 and the cloud worker returned a sectioned synthetic summary
-  with operation `structured_minilm_mmr_summary` in 23.259 ms. Vercel verification
-  remains pending until the frontend commit is deployed.
+  with operation `structured_minilm_mmr_summary` in 23.259 ms. GitHub commit
+  `e351ef3` triggered the Vercel deployment; the live bundle fingerprint changed
+  to `index-DW-mnFVV.js` and contains the corrected Energy-to-Latency control and
+  fictional resume fixture. The public Azure gateway remained healthy afterward.
 - Limitation: the classifier remains deterministic and rule based; this regression
   repair does not establish RFC-complete email parsing or real-world accuracy.
 - Required paper edit: none. The correction matches the existing description of
