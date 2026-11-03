@@ -455,3 +455,38 @@ authorized and implemented in A005; the other suggestions remain unimplemented.
 - Files: `docs/paper.tex`, `.gitignore`, `docs/PAPER_ALIGNMENT_LOG.md`.
 - User notification: the visible equation defect and its correction were reported
   during the render-and-review workflow.
+
+## A016 - Email punctuation classifier correction and slider-label repair
+
+- Date: 2026-11-03. Status: implemented and deployed to the Azure worker and
+  gateway; frontend deployment pending.
+- Paper sections: V (privacy classification), VII-B (latency-energy weighting),
+  and XII (rule-based classifier limitations).
+- Previous behavior: the shared Python and TypeScript email expressions rejected
+  an otherwise valid address when normal sentence punctuation immediately followed
+  its top-level domain. Consequently, the built-in fictional resume could be
+  labelled Public instead of Personal. The placement slider increased the latency
+  weight from left to right, but its visible endpoint labels stated the reverse.
+- New behavior: a trailing full stop is treated as punctuation outside the email,
+  so the fictional resume is classified Personal in both runtimes. The slider now
+  reads Energy on the low-latency-weight end and Latency on the high-weight end.
+  Privacy classes, permitted destinations, scheduling equations and calibration
+  values are unchanged; this restores the behavior described by the paper.
+- Files: `privacydrive/classifier.py`, `tests/test_classifier.py`,
+  `frontend/src/browser/privacy.ts`, `frontend/src/browser/privacy.test.ts`,
+  `frontend/src/browser/BrowserWorkspace.tsx`, and
+  `docs/PAPER_ALIGNMENT_LOG.md`.
+- Validation: seven Python classifier tests passed; the shared 31-case evaluation
+  remained 31/31 with a 5/31 Uncertain rate; all 51 frontend tests passed; and the
+  TypeScript/Vite production build completed. The complete Python discovery run
+  reached an unrelated host limitation because the Mac's Python 3.9 build lacks
+  `hashlib.scrypt`; classifier validation was unaffected. On Azure, both services
+  returned HTTP 200 and the cloud worker returned a sectioned synthetic summary
+  with operation `structured_minilm_mmr_summary` in 23.259 ms. Vercel verification
+  remains pending until the frontend commit is deployed.
+- Limitation: the classifier remains deterministic and rule based; this regression
+  repair does not establish RFC-complete email parsing or real-world accuracy.
+- Required paper edit: none. The correction matches the existing description of
+  emails as Personal unless an explicit nearby public-contact marker is present.
+- User notification: the implementation defects and the planned parity repair were
+  reported before editing.

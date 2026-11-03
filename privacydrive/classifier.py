@@ -12,7 +12,7 @@ from typing import Any, Iterable
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_POLICY_PATH = ROOT / "config" / "privacy-policy-v1.json"
 
-EMAIL_RE = re.compile(r"(?<![\w.+-])([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,})(?![\w.-])", re.I)
+EMAIL_RE = re.compile(r"(?<![\w.+-])([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,})(?![\w-])", re.I)
 PHONE_RE = re.compile(r"(?<!\d)(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{3}\)?[\s.-]?)\d{3}[\s.-]?\d{4}(?!\d)")
 LONG_DIGIT_RE = re.compile(r"(?<!\d)(?:\d[\s-]?){12,18}\d(?!\d)")
 

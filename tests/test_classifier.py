@@ -42,6 +42,13 @@ class PrivacyClassifierTests(unittest.TestCase):
         result = self.classifier.classify("Confidential document. Do not distribute.")
         self.assertEqual(("local",), result.allowed_destinations)
 
+    def test_email_followed_by_sentence_punctuation_is_personal(self) -> None:
+        result = self.classifier.classify(
+            "Résumé contact: aarya@example.test. Available from June."
+        )
+        self.assertEqual("personal", result.sensitivity)
+        self.assertEqual(("local", "edge"), result.allowed_destinations)
+
     def test_uncertain_requires_manual_review(self) -> None:
         result = self.classifier.classify("")
         self.assertEqual("uncertain", result.sensitivity)

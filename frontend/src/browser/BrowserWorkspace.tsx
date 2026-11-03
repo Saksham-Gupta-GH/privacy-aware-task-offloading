@@ -335,7 +335,7 @@ export function BrowserWorkspace({ workers, page, token, userId, onOpenFile }: {
                 <div className="privacy-note"><p>{selected.classification.reasons.join(" ")}</p><span>Allowed: {selected.classification.allowedDestinations.join(" · ")}</span></div>
                 <details className="document-preview"><summary>Preview file</summary><pre>{selected.content.slice(0, 700)}{selected.content.length > 700 ? "…" : ""}</pre></details>
                 <div className="processing-controls">
-                  <label className="slider-control"><span><b>Latency</b><b>Energy</b></span><input aria-label="Balance latency and energy" type="range" min="0" max="100" value={latencyWeight} onChange={(event) => setLatencyWeight(Number(event.target.value))} /></label>
+                  <label className="slider-control"><span><b>Energy</b><b>Latency</b></span><input aria-label="Balance energy and latency" type="range" min="0" max="100" value={latencyWeight} onChange={(event) => setLatencyWeight(Number(event.target.value))} /></label>
                   <label className="scenario-control"><span>Worker scenario</span><select value={scenario} onChange={(event) => setScenario(event.target.value)}>
                     <option value="live">Live worker state</option><option value="client_busy">Device busy</option><option value="edge_busy">Edge busy</option><option value="client_and_edge_busy">Device and edge busy</option>
                   </select></label>

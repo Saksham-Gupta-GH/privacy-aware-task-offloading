@@ -1,6 +1,6 @@
 import { BrowserClassification, Sensitivity } from "./types";
 
-const EMAIL = /(?<![\w.+-])([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,})(?![\w.-])/gi;
+const EMAIL = /(?<![\w.+-])([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,})(?![\w-])/gi;
 const PHONE = /(?<!\d)(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{3}\)?[\s.-]?)\d{3}[\s.-]?\d{4}(?!\d)/g;
 const LONG_DIGITS = /(?<!\d)(?:\d[\s-]?){12,18}\d(?!\d)/g;
 const CONFIDENTIAL = ["strictly confidential", "confidential document", "do not distribute", "restricted access"];

@@ -21,6 +21,12 @@ describe("browser privacy classifier", () => {
     expect(result.allowedDestinations).toEqual(["local", "edge"]);
   });
 
+  it("detects an email followed by sentence punctuation", () => {
+    const result = classifyInBrowser("Résumé contact: aarya@example.test. Available from June.");
+    expect(result.sensitivity).toBe("personal");
+    expect(result.allowedDestinations).toEqual(["local", "edge"]);
+  });
+
   it("uses a conservative fallback for unreadable content", () => {
     const result = classifyInBrowser("   ");
     expect(result.sensitivity).toBe("uncertain");
